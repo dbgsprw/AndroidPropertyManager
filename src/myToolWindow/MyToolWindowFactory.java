@@ -41,10 +41,10 @@ public class MyToolWindowFactory implements ToolWindowFactory {
     View Components
      */
     private JPanel myToolWindowContent;
-    private JButton button1;
+    private JButton saveToDeviceButton;
     private JButton addBtn;
     private JButton resetButton;
-    private JButton button4;
+    private JButton saveToIntellijButton;
     private JTable propTable;
     private ToolWindow myToolWindow;
     private JComboBox comboBox1;
@@ -119,16 +119,6 @@ public class MyToolWindowFactory implements ToolWindowFactory {
         });
         showAllProperty();
         isInitDone = true;
-
-
-        /*
-        hideToolWindowButton.addActionListener(new ActionListener() {
-
-            public void actionPerformed(ActionEvent e) {
-                myToolWindow.hide(null);
-            }
-        });*/
-
     }
 
     private void cellChangeToCurrentValueAtRow(int row) {
@@ -144,10 +134,8 @@ public class MyToolWindowFactory implements ToolWindowFactory {
         }
     }
 
-    // Create the tool window content.
     public void createToolWindowContent(Project project, ToolWindow toolWindow) {
         myToolWindow = toolWindow;
-        //this.currentDateTime();
         ContentFactory contentFactory = ContentFactory.SERVICE.getInstance();
         Content content = contentFactory.createContent(myToolWindowContent, "", false);
         toolWindow.getContentManager().addContent(content);

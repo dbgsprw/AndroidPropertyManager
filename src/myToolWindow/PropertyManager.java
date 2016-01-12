@@ -40,8 +40,6 @@ public class PropertyManager {
             System.out.println("Cannot Find ANDROID_HOME");
         }
 
-
-
         AndroidDebugBridge.init(true);
         File adbPath = new File(mAndroidHome, "platform-tools" + File.separator + "adb");
         ;
@@ -56,7 +54,6 @@ public class PropertyManager {
             public void deviceConnected(IDevice iDevice) {
                 currentDevice = iDevice;
                 try {
-
                     iDevice.executeShellCommand("getprop", new MultiLineReceiver() {
                         @Override
                         public void processNewLines(String[] strings) {

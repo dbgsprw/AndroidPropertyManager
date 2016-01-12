@@ -21,23 +21,23 @@
           <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
-          <text value="Button"/>
+          <text value="Change Preset"/>
         </properties>
       </component>
-      <component id="d2407" class="javax.swing.JButton" binding="button1" default-binding="true">
+      <component id="d2407" class="javax.swing.JButton" binding="saveToDeviceButton" default-binding="true">
         <constraints>
           <grid row="2" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
-          <text value="Button"/>
+          <text value="Save to Device"/>
         </properties>
       </component>
-      <component id="99764" class="javax.swing.JButton" binding="button4" default-binding="true">
+      <component id="99764" class="javax.swing.JButton" binding="saveToIntellijButton" default-binding="true">
         <constraints>
           <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
-          <text value="Button"/>
+          <text value="Save to Intellij"/>
         </properties>
       </component>
       <component id="90376" class="javax.swing.JButton" binding="resetButton" default-binding="true">
