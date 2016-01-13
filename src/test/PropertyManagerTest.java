@@ -1,11 +1,9 @@
 package test;
 
-import myToolWindow.PropertyManager;
+import core.PropertyManager;
 import org.junit.Test;
 
 import java.util.ArrayList;
-
-import static org.junit.Assert.*;
 
 /**
  * Created by myoo on 16. 1. 12.

@@ -1,11 +1,9 @@
-package myToolWindow;
+package core;
 
-import com.intellij.openapi.ui.ComboBox;
 import temp.Java2sAutoComboBox;
 
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
-import java.util.ArrayList;
 import java.util.List;
 
 /**

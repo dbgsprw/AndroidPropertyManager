@@ -1,46 +1,24 @@
-package myToolWindow;
+package core;
 
-import com.intellij.ide.util.gotoByName.ChooseByNameBase;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowFactory;
-import com.intellij.ui.components.JBRadioButton;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
-import com.intellij.ui.table.JBTable;
-import com.intellij.util.ui.CheckBox;
-import com.intellij.util.ui.ComboBoxCellEditor;
-import com.intellij.util.ui.RadioButtonEnumModel;
-import com.sun.org.apache.xerces.internal.impl.PropertyManager;
-import org.jdesktop.swingx.JXTable;
-import org.jdesktop.swingx.autocomplete.AutoCompleteDecorator;
 import temp.Java2sAutoComboBox;
 
 import javax.swing.*;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.*;
-import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.Calendar;
 
-public class MyToolWindowFactory implements ToolWindowFactory {
+public class PluginViewFactory implements ToolWindowFactory {
 
     /*
     View Components
      */
-    private JPanel myToolWindowContent;
+    private JPanel PluginViewContent;
     private JButton saveToDeviceButton;
     private JButton addBtn;
     private JButton resetButton;
@@ -53,7 +31,7 @@ public class MyToolWindowFactory implements ToolWindowFactory {
 
     private Java2sAutoComboBox propNameComboBox;
 
-    private myToolWindow.PropertyManager propertyManager;
+    private core.PropertyManager propertyManager;
 
     private void  showAllProperty() {
         ArrayList<String> propertyNames = propertyManager.getPropertyNames();
@@ -65,9 +43,9 @@ public class MyToolWindowFactory implements ToolWindowFactory {
         }
     }
 
-    public MyToolWindowFactory() {
+    public PluginViewFactory() {
 
-        propertyManager = new myToolWindow.PropertyManager();
+        propertyManager = new core.PropertyManager();
         try {
             Thread.sleep(1000);
         } catch (InterruptedException e) {
@@ -137,7 +115,7 @@ public class MyToolWindowFactory implements ToolWindowFactory {
     public void createToolWindowContent(Project project, ToolWindow toolWindow) {
         myToolWindow = toolWindow;
         ContentFactory contentFactory = ContentFactory.SERVICE.getInstance();
-        Content content = contentFactory.createContent(myToolWindowContent, "", false);
+        Content content = contentFactory.createContent(PluginViewContent, "", false);
         toolWindow.getContentManager().addContent(content);
     }
 }

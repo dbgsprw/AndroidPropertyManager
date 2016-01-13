@@ -1,4 +1,4 @@
-package myToolWindow;
+package core;
 
 import java.util.ArrayList;
 

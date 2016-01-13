@@ -12,8 +12,8 @@
 
 
     <extensions defaultExtensionNs="com.intellij">
-        <toolWindow id="My Sample Calendar" secondary="true" icon="/myToolWindow/plus.png" anchor="right"
-                    factoryClass="myToolWindow.MyToolWindowFactory"/>
+        <toolWindow id="Android Property Manager" secondary="true" icon="/core/plus.png" anchor="right"
+                    factoryClass="core.PluginViewFactory"/>
 
     </extensions>
 
