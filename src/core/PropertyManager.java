@@ -1,8 +1,6 @@
 package core;
 
-import com.android.ddmlib.AndroidDebugBridge;
-import com.android.ddmlib.IDevice;
-import com.android.ddmlib.MultiLineReceiver;
+import com.android.ddmlib.*;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.ui.Messages;
@@ -31,12 +29,22 @@ public class PropertyManager {
         projectManager.getDefaultProject();
         properties = new HashMap<String, Property>();
         propertyNames = new ArrayList<String>();
+
+
+        try {
+            Process process = Runtime.getRuntime().exec("adb root");
+            process.waitFor();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
         mAndroidHome = System.getenv("ANDROID_HOME");
         if (mAndroidHome == null) {
 
-            Messages.showMessageDialog(project, "Cannot Find ANDROID_HOME","Error", Messages.getInformationIcon());
+            Messages.showMessageDialog(project, "Cannot Find $ANDROID_HOME\nPlease set $ANDROID_HOME and restart","Error", Messages.getInformationIcon());
             System.out.println("Cannot Find ANDROID_HOME");
         }
+
 
         AndroidDebugBridge.init(true);
         File adbPath = new File(mAndroidHome, "platform-tools" + File.separator + "adb");
@@ -48,11 +56,10 @@ public class PropertyManager {
         }
         adb.addDeviceChangeListener(new AndroidDebugBridge.IDeviceChangeListener() {
             @Override
-
             public void deviceConnected(IDevice iDevice) {
                 currentDevice = iDevice;
                 try {
-                    iDevice.executeShellCommand("getprop", new MultiLineReceiver() {
+                    currentDevice.executeShellCommand("getprop", new MultiLineReceiver() {
                         @Override
                         public void processNewLines(String[] strings) {
                             for (String line : strings) {
@@ -60,7 +67,7 @@ public class PropertyManager {
                                 /*
                                 출력이 다 끝난후 string == "" 하나가 옴
                                  */
-                                if (line.equals("")) {
+                                if ("".equals(line)) {
                                     return;
 
                                 }
@@ -149,11 +156,11 @@ public class PropertyManager {
                 currentDevice.executeShellCommand("getprop " + name, new MultiLineReceiver() {
                     @Override
                     public void processNewLines(String[] strings) {
-                        if(strings[0].equals("")) {
+                        if("".equals(strings[0])) {
                             return;
                         }
                         if(!strings[0].trim().equals(finalValue)) {
-                            Messages.showMessageDialog(project, "Cannot set property. Returned to old value","Error", Messages.getInformationIcon());
+                            Messages.showMessageDialog(project, "Cannot set property. Returned to old value\n Please check adb is in root","Error", Messages.getInformationIcon());
 
                         }
                     }
