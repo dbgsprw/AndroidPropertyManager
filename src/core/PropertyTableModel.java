@@ -3,6 +3,7 @@ package core;
 import javax.swing.table.DefaultTableModel;
 
 /**
+ *
  * Created by myoo on 16. 1. 11.
  */
 public class PropertyTableModel extends DefaultTableModel {
@@ -18,6 +19,7 @@ public class PropertyTableModel extends DefaultTableModel {
             return "Value";
         }
     }
+
 
 
 
