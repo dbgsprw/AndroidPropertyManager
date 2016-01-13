@@ -12,6 +12,7 @@ public class PropertyManagerTest {
     @Test
     public void test()
     {
+        /*
         PropertyManager propertyManager = new PropertyManager();
         try {
             Thread.sleep(1000);
@@ -28,6 +29,6 @@ public class PropertyManagerTest {
             Thread.sleep(1000 * 1000);
         } catch (InterruptedException e) {
             e.printStackTrace();
-        }
+        }*/
     }
 }

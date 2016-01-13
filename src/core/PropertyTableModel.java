@@ -3,33 +3,32 @@ package core;
 import javax.swing.table.DefaultTableModel;
 
 /**
- *
  * Created by myoo on 16. 1. 11.
  */
 public class PropertyTableModel extends DefaultTableModel {
-
-
+    private final static int ROW_COUNT = 500;
+    private final static int COLUMN_COUNT = 2;
+    private final static int COLUMN_PROPERTY_NAME = 0;
+    private final static int COLUMN_PROPERTY_VALUE = 1;
 
     @Override
     public String getColumnName(int col) {
-        if(col == 0) {
-            return "Name";
-        }
-        else {
-            return "Value";
+        switch (col) {
+            case COLUMN_PROPERTY_NAME:
+                return "Name";
+            default:
+                return "Value";
         }
     }
-
-
 
 
     @Override
     public int getColumnCount() {
-        return 2;
+        return COLUMN_COUNT;
     }
 
     @Override
     public int getRowCount() {
-        return 500;
+        return ROW_COUNT;
     }
 }

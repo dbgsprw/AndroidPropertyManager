@@ -4,6 +4,8 @@
       <root url="jar://$USER_HOME$/ddmlib.jar!/" />
     </CLASSES>
     <JAVADOC />
-    <SOURCES />
+    <SOURCES>
+      <root url="file://$USER_HOME$/Android_Source/base/ddmlib/src/main/java" />
+    </SOURCES>
   </library>
 </component>
