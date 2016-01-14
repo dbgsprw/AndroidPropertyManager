@@ -3,7 +3,7 @@ package core;
 import javax.swing.table.DefaultTableModel;
 
 /**
- * Created by myoo on 16. 1. 11.
+ * Created by dbgsprw on 16. 1. 11.
  */
 public class PropertyTableModel extends DefaultTableModel {
     private final static int ROW_COUNT = 500;

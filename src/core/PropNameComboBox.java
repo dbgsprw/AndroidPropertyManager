@@ -7,7 +7,7 @@ import java.awt.event.ItemListener;
 import java.util.List;
 
 /**
- * Created by myoo on 16. 1. 11.
+ * Created by dbgsprw on 16. 1. 11.
  */
 public class PropNameComboBox extends Java2sAutoComboBox {
 

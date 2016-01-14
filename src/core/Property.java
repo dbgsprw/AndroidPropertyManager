@@ -3,12 +3,12 @@ package core;
 import java.util.ArrayList;
 
 /**
- * Created by myoo on 16. 1. 12.
+ * Created by dbgsprw on 16. 1. 12.
  */
 public class Property {
     private final String name;
-    private String value;
     ArrayList<String> valueHistory = new ArrayList<String>();
+    private String value;
 
     public Property(String name, String value) {
         this.name = name;

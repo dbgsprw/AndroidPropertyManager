@@ -1,9 +1,9 @@
 <idea-plugin version="2">
-    <id>myoo.apm</id>
+    <id>dbgsprw.apm</id>
     <name>AndroidPropertyManager</name>
     <description>AndroidPropertyManager Prototype</description>
-    <version>2.0</version>
-    <vendor email="support@yourcompany.com" url="http://www.yourcompany.com">YourCompany</vendor>
+    <version>1.0</version>
+    <vendor email="dbgsprw@gmail.com" url=""></vendor>
 
     <change-notes>
     </change-notes>

@@ -16,7 +16,7 @@ import java.util.ArrayList;
 
 
 /**
- * Created by myoo on 16. 1. 11.
+ * Created by dbgsprw on 16. 1. 11.
  */
 public class PropertyManager {
     private static PropertyManager propertyManager;
@@ -62,7 +62,7 @@ public class PropertyManager {
         }
 
 
-        adb.addDeviceChangeListener(new AndroidDebugBridge.IDeviceChangeListener() {
+        AndroidDebugBridge.addDeviceChangeListener(new AndroidDebugBridge.IDeviceChangeListener() {
             @Override
             public void deviceConnected(IDevice iDevice) {
                 System.out.println("DeviceConnected");

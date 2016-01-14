@@ -33,13 +33,13 @@ public class PluginViewFactory implements ToolWindowFactory {
 
     private JPanel PluginViewContent;
     private JButton saveCustomTableButton;
-    private JButton resetButton;
-    private JButton saveToIntellijButton;
     private JTable propTable;
     private ToolWindow myToolWindow;
     private JComboBox tableViewComboBox;
     private PropertiesComponent propertiesComponent;
     private JLabel changeTableLabel;
+    private JButton button;
+    private JButton button2;
     private boolean isUpdateDone;
     private PropNameComboBox propNameComboBox;
     private ArrayList<String> tableViewList;
