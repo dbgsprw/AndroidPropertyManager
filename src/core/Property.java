@@ -6,34 +6,34 @@ import java.util.ArrayList;
  * Created by dbgsprw on 16. 1. 12.
  */
 public class Property {
-    private final String name;
-    ArrayList<String> valueHistory = new ArrayList<String>();
-    private String value;
+    private final String mName;
+    private ArrayList<String> mValueHistory = new ArrayList<String>();
+    private String mValue;
 
     public Property(String name, String value) {
-        this.name = name;
-        this.value = value;
+        this.mName = name;
+        this.mValue = value;
     }
 
     public String getName() {
-        return name;
+        return mName;
     }
 
     public String getValue() {
-        return value;
+        return mValue;
     }
 
     public void setValue(String value) {
-        valueHistory.add(value);
-        this.value = value;
+        mValueHistory.add(value);
+        this.mValue = value;
     }
 
 
     @Override
     public String toString() {
         return "Property{" +
-                "name='" + name + '\'' +
-                ", value='" + value + '\'' +
+                "Name='" + mName + '\'' +
+                ", Value='" + mValue + '\'' +
                 '}';
     }
 }

@@ -1,8 +1,10 @@
 package core;
 
+import com.android.ddmlib.AdbCommandRejectedException;
+import com.android.ddmlib.ShellCommandUnresponsiveException;
+import com.android.ddmlib.TimeoutException;
 import com.intellij.ide.util.PropertiesComponent;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowFactory;
@@ -18,6 +20,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -27,89 +30,104 @@ public class PluginViewFactory implements ToolWindowFactory {
     private final static int COLUMN_PROPERTY_VALUE = 1;
     private final static String TABLE_VIEW_LIST_PROPERTY_NAME = "TABLE_VIEW_LIST";
     private final static String ALL_TABLE_VIEW_PROPERTY_NAME = "ALL";
-    private static PluginViewFactory pluginViewFactory;
-    private ProjectManager projectManager;
-    private Project project;
 
-    private JPanel PluginViewContent;
-    private JButton saveCustomTableButton;
-    private JTable propTable;
-    private ToolWindow myToolWindow;
-    private JComboBox tableViewComboBox;
-    private PropertiesComponent propertiesComponent;
-    private JLabel changeTableLabel;
-    private JButton button;
-    private JButton button2;
-    private boolean isUpdateDone;
-    private PropNameComboBox propNameComboBox;
-    private ArrayList<String> tableViewList;
-    private core.PropertyManager propertyManager;
+    private static PluginViewFactory sPluginViewFactory;
+    private Project mProject;
+    private PropertiesComponent mPropertiesComponent;
+    private core.PropertyManager mPropertyManager;
+
+    private ToolWindow mToolWindow;
+    private JPanel mPluginViewContent;
+    private JTable mPropTable;
+    private JButton mSaveCustomTableButton;
+    private JButton mSavePropFileButton;
+    private JLabel mChangeTableLabel;
+    private JComboBox mTableViewComboBox;
+    private JButton mRestartRuntimeButton;
+    private JButton mRebootDeviceButton;
+    private PropNameComboBox mPropNameComboBox;
+
+    private ArrayList<String> mTableViewList;
+
+    private boolean mIsUpdateDone;
 
 
     public PluginViewFactory() {
-        projectManager = ProjectManager.getInstance();
-        project = projectManager.getDefaultProject();
-        propertiesComponent = PropertiesComponent.getInstance(project);
+        sPluginViewFactory = this;
+    }
 
-        pluginViewFactory = this;
-        propertyManager = PropertyManager.getInstance();
-        tableViewComboBox.setEditable(true);
+    public static PluginViewFactory getInstance() {
+        return sPluginViewFactory;
+    }
 
-        getTableView();
-        tableViewComboBox.addItemListener(new ItemListener() {
+    public void createToolWindowContent(Project project, ToolWindow toolWindow) {
+        mProject = project;
+        mPropertiesComponent = PropertiesComponent.getInstance(mProject);
+        mPropertyManager = PropertyManager.getInstance();
+        mPropNameComboBox = new PropNameComboBox(mPropertyManager.getPropertyNames());
+        updateTableViewList();
+        viewComponentInit();
+
+        mToolWindow = toolWindow;
+        ContentFactory contentFactory = ContentFactory.SERVICE.getInstance();
+        Content content = contentFactory.createContent(mPluginViewContent, "", false);
+        toolWindow.getContentManager().addContent(content);
+    }
+
+    private void viewComponentInit() {
+        mTableViewComboBox.setEditable(true);
+
+        mTableViewComboBox.addItemListener(new ItemListener() {
             @Override
             public void itemStateChanged(ItemEvent itemEvent) {
                 if (itemEvent.getStateChange() == ItemEvent.DESELECTED) return;
                 String tableView = itemEvent.getItem().toString();
                 if (TABLE_VIEW_LIST_PROPERTY_NAME.equals(tableView)) {
-                    Messages.showMessageDialog(project, "Cannot use that table view name", "Error", Messages.getInformationIcon());
+                    Messages.showMessageDialog(mProject, "Cannot use that table view name", "Error", Messages.getInformationIcon());
                     return;
                 }
                 updateTable(tableView);
             }
         });
 
-        saveCustomTableButton.addActionListener(new ActionListener() {
+        mSaveCustomTableButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                String currentTableViewName = tableViewComboBox.getSelectedItem().toString();
-                if (ALL_TABLE_VIEW_PROPERTY_NAME.equals(tableViewComboBox.getSelectedItem())) {
-                    Messages.showMessageDialog(project, "Cannot save at ALL table, please use custom table view", "Error", Messages.getInformationIcon());
+                String currentTableViewName = mTableViewComboBox.getSelectedItem().toString();
+                if (ALL_TABLE_VIEW_PROPERTY_NAME.equals(mTableViewComboBox.getSelectedItem())) {
+                    Messages.showMessageDialog(mProject, "Cannot save at ALL table, please use custom table view", "Error", Messages.getInformationIcon());
                 }
                 ArrayList<String> propertyNameList = new ArrayList<String>();
-                int tableRowLength = propTable.getRowCount();
+                int tableRowLength = mPropTable.getRowCount();
                 for (int i = 0; i < tableRowLength; i++) {
-                    propertyNameList.add(propTable.getValueAt(i, COLUMN_PROPERTY_NAME).toString());
+                    propertyNameList.add(mPropTable.getValueAt(i, COLUMN_PROPERTY_NAME).toString());
                 }
-                propertiesComponent.setValues(currentTableViewName, propertyNameList.toArray(new String[propertyNameList.size()]));
+                mPropertiesComponent.setValues(currentTableViewName, propertyNameList.toArray(new String[propertyNameList.size()]));
             }
         });
 
-        propNameComboBox = new PropNameComboBox(propertyManager.getPropertyNames());
-
-
-        TableCellEditor editor = new DefaultCellEditor(propNameComboBox);
-        propTable.setRowHeight(30);
-        propTable.setModel(new PropertyTableModel());
-        propTable.setAutoscrolls(true);
-        propTable.getColumnModel().getColumn(COLUMN_PROPERTY_NAME).setCellEditor(editor);
-        propTable.getModel().addTableModelListener(new TableModelListener() {
+        TableCellEditor editor = new DefaultCellEditor(mPropNameComboBox);
+        mPropTable.setRowHeight(30);
+        mPropTable.setModel(new PropertyTableModel());
+        mPropTable.setAutoscrolls(true);
+        mPropTable.getColumnModel().getColumn(COLUMN_PROPERTY_NAME).setCellEditor(editor);
+        mPropTable.getModel().addTableModelListener(new TableModelListener() {
             @Override
             public void tableChanged(TableModelEvent tableModelEvent) {
 
-                if (isUpdateDone == false) return;
+                if (mIsUpdateDone == false) return;
                 int row = tableModelEvent.getFirstRow();
                 int col = tableModelEvent.getColumn();
-                String name = propTable.getValueAt(row, COLUMN_PROPERTY_NAME).toString();
+                String name = mPropTable.getValueAt(row, COLUMN_PROPERTY_NAME).toString();
                 if (col == 0) {
                     cellChangeToCurrentValueAtRow(row);
                 } else if (col == 1) {
-                    Property property = propertyManager.getProperty(name);
+                    Property property = mPropertyManager.getProperty(name);
                     if (property != null) {
-                        String value = propTable.getValueAt(row, COLUMN_PROPERTY_VALUE).toString();
-                        if (!value.equals(propertyManager.getProperty(name))) {
+                        String value = mPropTable.getValueAt(row, COLUMN_PROPERTY_VALUE).toString();
+                        if (!value.equals(mPropertyManager.getProperty(name))) {
                             try {
-                                propertyManager.setProperty(name, value);
+                                mPropertyManager.setProperty(name, value);
                             } catch (NullValueException e) {
                                 cellChangeToCurrentValueAtRow(row);
                                 e.printStackTrace();
@@ -121,75 +139,111 @@ public class PluginViewFactory implements ToolWindowFactory {
                 } else {
                     System.out.println("Error : Col Number Over");
                 }
+            }
+        });
 
+        mSavePropFileButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                //        mPropertyManager.savePropFile();
+            }
+        });
+
+        mRestartRuntimeButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                try {
+                    mPropertyManager.restartRuntime();
+                } catch (TimeoutException e) {
+                    e.printStackTrace();
+                } catch (AdbCommandRejectedException e) {
+                    e.printStackTrace();
+                } catch (ShellCommandUnresponsiveException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+
+        mRebootDeviceButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                try {
+                    mPropertyManager.rebootDevice();
+                } catch (TimeoutException e) {
+                    e.printStackTrace();
+                } catch (AdbCommandRejectedException e) {
+                    e.printStackTrace();
+                } catch (ShellCommandUnresponsiveException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         });
     }
 
-    public static PluginViewFactory getInstance() {
-        return pluginViewFactory;
-    }
-
     public void updateTable() {
-        String selectedTableView = tableViewComboBox.getSelectedItem().toString();
+        String selectedTableView = mTableViewComboBox.getSelectedItem().toString();
         updateTable(selectedTableView);
     }
 
     public void updateTable(String selectedTableView) {
-        propNameComboBox.setDataList(propertyManager.getPropertyNames());
+        mPropNameComboBox.setDataList(mPropertyManager.getPropertyNames());
 
-        isUpdateDone = false;
+        mIsUpdateDone = false;
         if (ALL_TABLE_VIEW_PROPERTY_NAME.equals(selectedTableView)) {
             showAllProperty();
         } else {
             showSelectedTableViewProperty(selectedTableView);
         }
-        isUpdateDone = true;
+        mIsUpdateDone = true;
     }
 
 
-    private void getTableView() {
-        tableViewComboBox.addItem(ALL_TABLE_VIEW_PROPERTY_NAME);
-        String[] tableViews = propertiesComponent.getValues(TABLE_VIEW_LIST_PROPERTY_NAME);
+    private void updateTableViewList() {
+        mTableViewComboBox.addItem(ALL_TABLE_VIEW_PROPERTY_NAME);
+        String[] tableViews = mPropertiesComponent.getValues(TABLE_VIEW_LIST_PROPERTY_NAME);
         if (tableViews == null) {
-            tableViewList = new ArrayList<String>();
+            mTableViewList = new ArrayList<String>();
             return;
         }
-        tableViewList = new ArrayList<String>(Arrays.asList(tableViews));
-        for (String tableView : tableViewList) {
-            tableViewComboBox.addItem(tableView);
+        mTableViewList = new ArrayList<String>(Arrays.asList(tableViews));
+        for (String tableView : mTableViewList) {
+            mTableViewComboBox.addItem(tableView);
         }
     }
 
     private void showProperty(ArrayList<String> propertyNames) {
         int propertyLength = propertyNames.size();
-        int tableRowLength = propTable.getRowCount();
+        int tableRowLength = mPropTable.getRowCount();
         for (int i = 0; i < propertyLength; i++) {
             String propertyName = propertyNames.get(i);
 
-            propTable.setValueAt(propertyName, i, COLUMN_PROPERTY_NAME);
+            mPropTable.setValueAt(propertyName, i, COLUMN_PROPERTY_NAME);
 
-            propTable.setValueAt(propertyManager.getProperty(propertyName).getValue(), i, COLUMN_PROPERTY_VALUE);
+            mPropTable.setValueAt(mPropertyManager.getProperty(propertyName).getValue(), i, COLUMN_PROPERTY_VALUE);
         }
         for (int i = propertyLength; i < tableRowLength; i++) {
-            propTable.setValueAt("", i, COLUMN_PROPERTY_NAME);
-            propTable.setValueAt("", i, COLUMN_PROPERTY_VALUE);
+            mPropTable.setValueAt("", i, COLUMN_PROPERTY_NAME);
+            mPropTable.setValueAt("", i, COLUMN_PROPERTY_VALUE);
         }
 
     }
 
     private void showAllProperty() {
-        ArrayList<String> propertyNames = propertyManager.getPropertyNames();
+        ArrayList<String> propertyNames = mPropertyManager.getPropertyNames();
         showProperty(propertyNames);
     }
 
     private void showSelectedTableViewProperty(String tableViewName) {
-        String[] values = propertiesComponent.getValues(tableViewName);
+        String[] values = mPropertiesComponent.getValues(tableViewName);
         if (values == null) {
-            if (!tableViewList.contains(tableViewName)) {
-                tableViewList.add(tableViewName);
-                propertiesComponent.setValues(TABLE_VIEW_LIST_PROPERTY_NAME, tableViewList.toArray(new String[tableViewList.size()]));
-                tableViewComboBox.addItem(tableViewName);
+            if (!mTableViewList.contains(tableViewName)) {
+                mTableViewList.add(tableViewName);
+                mPropertiesComponent.setValues(TABLE_VIEW_LIST_PROPERTY_NAME, mTableViewList.toArray(new String[mTableViewList.size()]));
+                mTableViewComboBox.addItem(tableViewName);
             }
             values = new String[0];
         }
@@ -199,26 +253,18 @@ public class PluginViewFactory implements ToolWindowFactory {
     }
 
     private void cellChangeToCurrentValueAtRow(int row) {
-        String name = propTable.getValueAt(row, COLUMN_PROPERTY_NAME).toString();
-        Property property = propertyManager.getProperty(name);
+        String name = mPropTable.getValueAt(row, COLUMN_PROPERTY_NAME).toString();
+        Property property = mPropertyManager.getProperty(name);
         if ("".equals(name)) {
             return;
         }
         if (property == null) {
-            propertyManager.putProperty(name, new Property(name, null));
+            mPropertyManager.putProperty(name, new Property(name, null));
         }
         String value;
-        value = propertyManager.getProperty(name).getValue();
+        value = mPropertyManager.getProperty(name).getValue();
         if (value != null) {
-            propTable.setValueAt(propertyManager.getProperty(name).getValue(), row, COLUMN_PROPERTY_VALUE);
+            mPropTable.setValueAt(mPropertyManager.getProperty(name).getValue(), row, COLUMN_PROPERTY_VALUE);
         }
     }
-
-    public void createToolWindowContent(Project project, ToolWindow toolWindow) {
-        myToolWindow = toolWindow;
-        ContentFactory contentFactory = ContentFactory.SERVICE.getInstance();
-        Content content = contentFactory.createContent(PluginViewContent, "", false);
-        toolWindow.getContentManager().addContent(content);
-    }
-
 }
