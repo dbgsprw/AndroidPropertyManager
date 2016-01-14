@@ -1,6 +1,6 @@
 package core;
 
-import temp.Java2sAutoComboBox;
+import lib.Java2sAutoComboBox;
 
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
@@ -14,7 +14,7 @@ public class PropNameComboBox extends Java2sAutoComboBox {
 
     public PropNameComboBox(List list) {
         super(list);
-        //    setStrict(false);
+        setStrict(false);
         addItemListener(new ItemListener() {
             @Override
             public void itemStateChanged(ItemEvent itemEvent) {

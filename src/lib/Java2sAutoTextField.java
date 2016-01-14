@@ -1,4 +1,4 @@
-package temp;
+package lib;
 
 /* From http://java.sun.com/docs/books/tutorial/index.html */
 

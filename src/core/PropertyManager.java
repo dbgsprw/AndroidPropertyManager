@@ -19,24 +19,15 @@ import java.util.ArrayList;
  * Created by myoo on 16. 1. 11.
  */
 public class PropertyManager {
+    private static PropertyManager propertyManager;
     private HashMap<String, Property> properties;
     private ArrayList<String> propertyNames;
-
     private String mAndroidHome;
     private AndroidDebugBridge adb;
     private IDevice currentDevice;
     private ProjectManager projectManager;
     private Project project;
 
-    private static PropertyManager propertyManager;
-
-
-    public static PropertyManager getInstance() {
-        if (propertyManager == null) {
-            propertyManager = new PropertyManager();
-        }
-        return propertyManager;
-    }
 
     private PropertyManager() {
 
@@ -118,11 +109,16 @@ public class PropertyManager {
         });
     }
 
-
     public PropertyManager(AndroidDebugBridge adb) {
         this.adb = adb;
     }
 
+    public static PropertyManager getInstance() {
+        if (propertyManager == null) {
+            propertyManager = new PropertyManager();
+        }
+        return propertyManager;
+    }
 
     private Property lineToProperty(String line) {
         StringTokenizer stringTokenizer;
@@ -136,11 +132,11 @@ public class PropertyManager {
     }
 
     public void putProperty(String name, Property property) {
-        if (properties.containsKey(name)) {
-            // Message : Already Contain
-        } else {
+        if (!properties.containsKey(name)) {
             propertyNames.add(name);
             properties.put(name, property);
+        } else {
+            // Message : Already Contain
         }
     }
 

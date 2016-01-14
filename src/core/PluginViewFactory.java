@@ -1,6 +1,5 @@
 package core;
 
-import com.android.ddmlib.AndroidDebugBridge;
 import com.intellij.ide.util.PropertiesComponent;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
@@ -10,27 +9,28 @@ import com.intellij.openapi.wm.ToolWindowFactory;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
 import exception.NullValueException;
-import temp.Java2sAutoComboBox;
 
 import javax.swing.*;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
-import javax.swing.table.*;
+import javax.swing.table.TableCellEditor;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.concurrent.locks.Lock;
 
 public class PluginViewFactory implements ToolWindowFactory {
 
+    private final static int COLUMN_PROPERTY_NAME = 0;
+    private final static int COLUMN_PROPERTY_VALUE = 1;
+    private final static String TABLE_VIEW_LIST_PROPERTY_NAME = "TABLE_VIEW_LIST";
+    private final static String ALL_TABLE_VIEW_PROPERTY_NAME = "ALL";
+    private static PluginViewFactory pluginViewFactory;
     private ProjectManager projectManager;
     private Project project;
-    /*
-    View Components
-     */
+
     private JPanel PluginViewContent;
     private JButton saveCustomTableButton;
     private JButton resetButton;
@@ -40,48 +40,16 @@ public class PluginViewFactory implements ToolWindowFactory {
     private JComboBox tableViewComboBox;
     private PropertiesComponent propertiesComponent;
     private JLabel changeTableLabel;
-
     private boolean isUpdateDone;
-
     private PropNameComboBox propNameComboBox;
     private ArrayList<String> tableViewList;
-
     private core.PropertyManager propertyManager;
-
-    private static PluginViewFactory pluginViewFactory;
-
-    private final static int COLUMN_PROPERTY_NAME = 0;
-    private final static int COLUMN_PROPERTY_VALUE = 1;
-    private final static String TABLE_VIEW_LIST_PROPERTY_NAME = "TABLE_VIEW_LIST";
-    private final static String ALL_TABLE_VIEW_PROPERTY_NAME = "ALL";
-
-    public void updateTable() {
-        String selectedTableView = tableViewComboBox.getSelectedItem().toString();
-        updateTable(selectedTableView);
-    }
-
-    public void updateTable(String selectedTableView) {
-        propNameComboBox.setDataList(propertyManager.getPropertyNames());
-
-        isUpdateDone = false;
-        if (ALL_TABLE_VIEW_PROPERTY_NAME.equals(selectedTableView)) {
-            showAllProperty();
-        } else {
-            showSelectedTableViewProperty(selectedTableView);
-        }
-        isUpdateDone = true;
-    }
-
-    public static PluginViewFactory getInstance() {
-        return pluginViewFactory;
-    }
 
 
     public PluginViewFactory() {
         projectManager = ProjectManager.getInstance();
         project = projectManager.getDefaultProject();
-        propertiesComponent = PropertiesComponent.getInstance();
-//        propertiesComponent.unsetValue(TABLE_VIEW_LIST_PROPERTY_NAME);
+        propertiesComponent = PropertiesComponent.getInstance(project);
 
         pluginViewFactory = this;
         propertyManager = PropertyManager.getInstance();
@@ -91,9 +59,9 @@ public class PluginViewFactory implements ToolWindowFactory {
         tableViewComboBox.addItemListener(new ItemListener() {
             @Override
             public void itemStateChanged(ItemEvent itemEvent) {
-                if(itemEvent.getStateChange() == ItemEvent.DESELECTED) return;
+                if (itemEvent.getStateChange() == ItemEvent.DESELECTED) return;
                 String tableView = itemEvent.getItem().toString();
-                if(TABLE_VIEW_LIST_PROPERTY_NAME.equals(tableView)) {
+                if (TABLE_VIEW_LIST_PROPERTY_NAME.equals(tableView)) {
                     Messages.showMessageDialog(project, "Cannot use that table view name", "Error", Messages.getInformationIcon());
                     return;
                 }
@@ -105,7 +73,7 @@ public class PluginViewFactory implements ToolWindowFactory {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
                 String currentTableViewName = tableViewComboBox.getSelectedItem().toString();
-                if(ALL_TABLE_VIEW_PROPERTY_NAME.equals(tableViewComboBox.getSelectedItem())) {
+                if (ALL_TABLE_VIEW_PROPERTY_NAME.equals(tableViewComboBox.getSelectedItem())) {
                     Messages.showMessageDialog(project, "Cannot save at ALL table, please use custom table view", "Error", Messages.getInformationIcon());
                 }
                 ArrayList<String> propertyNameList = new ArrayList<String>();
@@ -158,6 +126,28 @@ public class PluginViewFactory implements ToolWindowFactory {
         });
     }
 
+    public static PluginViewFactory getInstance() {
+        return pluginViewFactory;
+    }
+
+    public void updateTable() {
+        String selectedTableView = tableViewComboBox.getSelectedItem().toString();
+        updateTable(selectedTableView);
+    }
+
+    public void updateTable(String selectedTableView) {
+        propNameComboBox.setDataList(propertyManager.getPropertyNames());
+
+        isUpdateDone = false;
+        if (ALL_TABLE_VIEW_PROPERTY_NAME.equals(selectedTableView)) {
+            showAllProperty();
+        } else {
+            showSelectedTableViewProperty(selectedTableView);
+        }
+        isUpdateDone = true;
+    }
+
+
     private void getTableView() {
         tableViewComboBox.addItem(ALL_TABLE_VIEW_PROPERTY_NAME);
         String[] tableViews = propertiesComponent.getValues(TABLE_VIEW_LIST_PROPERTY_NAME);
@@ -196,7 +186,7 @@ public class PluginViewFactory implements ToolWindowFactory {
     private void showSelectedTableViewProperty(String tableViewName) {
         String[] values = propertiesComponent.getValues(tableViewName);
         if (values == null) {
-            if(!tableViewList.contains(tableViewName)) {
+            if (!tableViewList.contains(tableViewName)) {
                 tableViewList.add(tableViewName);
                 propertiesComponent.setValues(TABLE_VIEW_LIST_PROPERTY_NAME, tableViewList.toArray(new String[tableViewList.size()]));
                 tableViewComboBox.addItem(tableViewName);
@@ -225,7 +215,6 @@ public class PluginViewFactory implements ToolWindowFactory {
     }
 
     public void createToolWindowContent(Project project, ToolWindow toolWindow) {
-
         myToolWindow = toolWindow;
         ContentFactory contentFactory = ContentFactory.SERVICE.getInstance();
         Content content = contentFactory.createContent(PluginViewContent, "", false);
