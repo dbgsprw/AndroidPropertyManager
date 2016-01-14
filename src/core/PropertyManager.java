@@ -1,8 +1,6 @@
 package core;
 
-import com.android.ddmlib.AndroidDebugBridge;
-import com.android.ddmlib.IDevice;
-import com.android.ddmlib.MultiLineReceiver;
+import com.android.ddmlib.*;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.ui.Messages;
@@ -12,31 +10,34 @@ import exception.NullValueException;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 
 
 /**
  * Created by dbgsprw on 16. 1. 11.
  */
 public class PropertyManager {
-    private static PropertyManager propertyManager;
-    private HashMap<String, Property> properties;
-    private ArrayList<String> propertyNames;
+    private static PropertyManager sPropertyManager;
+    private HashMap<String, Property> mProperties;
+    private ArrayList<String> mPropertyNames;
     private String mAndroidHome;
-    private AndroidDebugBridge adb;
-    private IDevice currentDevice;
-    private ProjectManager projectManager;
-    private Project project;
+    private AndroidDebugBridge mADB;
+    private IDevice mCurrentDevice;
+    private ProjectManager mProjectManager;
+    private Project mProject;
 
 
     private PropertyManager() {
 
 
-        properties = new HashMap<String, Property>();
-        propertyNames = new ArrayList<String>();
+        mProperties = new HashMap<String, Property>();
+        mPropertyNames = new ArrayList<String>();
 
-        projectManager = ProjectManager.getInstance();
-        project = projectManager.getDefaultProject();
+        mProjectManager = ProjectManager.getInstance();
+        mProject = mProjectManager.getDefaultProject();
+
         try {
             Process process = Runtime.getRuntime().exec("adb root");
             process.waitFor();
@@ -47,7 +48,7 @@ public class PropertyManager {
         mAndroidHome = System.getenv("ANDROID_HOME");
         if (mAndroidHome == null) {
 
-            Messages.showMessageDialog(project, "Cannot Find $ANDROID_HOME\nPlease set $ANDROID_HOME and restart", "Error", Messages.getInformationIcon());
+            Messages.showMessageDialog(mProject, "Cannot Find $ANDROID_HOME\nPlease set $ANDROID_HOME and restart", "Error", Messages.getInformationIcon());
             System.out.println("Cannot Find ANDROID_HOME");
         }
 
@@ -55,7 +56,7 @@ public class PropertyManager {
 
         File adbPath = new File(mAndroidHome, "platform-tools" + File.separator + "adb");
         try {
-            adb = AndroidDebugBridge.createBridge(adbPath.getCanonicalPath(), true);
+            mADB = AndroidDebugBridge.createBridge(adbPath.getCanonicalPath(), true);
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -66,58 +67,64 @@ public class PropertyManager {
             @Override
             public void deviceConnected(IDevice iDevice) {
                 System.out.println("DeviceConnected");
-                currentDevice = iDevice;
-                try {
-                    currentDevice.executeShellCommand("getprop", new MultiLineReceiver() {
-                        @Override
-                        public void processNewLines(String[] strings) {
-                            for (String line : strings) {
-                                // 다 받았을 때
-                                /*
-                                출력이 다 끝난후 string == "" 하나가 옴
-                                 */
-                                if ("".equals(line)) {
-                                    PluginViewFactory.getInstance().updateTable();
-                                    return;
-                                }
-                                Property property = lineToProperty(line);
-                                putProperty(property.getName(), property);
-                            }
-                        }
-
-                        @Override
-                        public boolean isCancelled() {
-                            return false;
-                        }
-                    });
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-
+                mCurrentDevice = iDevice;
             }
 
             @Override
             public void deviceDisconnected(IDevice iDevice) {
-                currentDevice = null;
+                //  mCurrentDevice = null;
                 System.out.println("DeviceDisconnected");
             }
 
             @Override
             public void deviceChanged(IDevice iDevice, int i) {
-                deviceConnected(iDevice);
+                System.out.println("DeviceChanged");
+                //deviceConnected(iDevice);
             }
         });
     }
 
-    public PropertyManager(AndroidDebugBridge adb) {
-        this.adb = adb;
+    public PropertyManager(AndroidDebugBridge mADB) {
+        this.mADB = mADB;
     }
 
-    public static PropertyManager getInstance() {
-        if (propertyManager == null) {
-            propertyManager = new PropertyManager();
+    synchronized public static PropertyManager getInstance() {
+        if (sPropertyManager == null) {
+            sPropertyManager = new PropertyManager();
         }
-        return propertyManager;
+        return sPropertyManager;
+    }
+
+    public void updatePropFromDevice() {
+        try {
+            mCurrentDevice.executeShellCommand("getprop", new MultiLineReceiver() {
+                @Override
+                public void processNewLines(String[] strings) {
+                    for (String line : strings) {
+                        // 다 받았을 때
+                                /*
+                                출력이 다 끝난후 string == "" 하나가 옴
+                                 */
+                        if ("".equals(line)) {
+                            PluginViewFactory pluginViewFactory = PluginViewFactory.getInstance();
+                            if (pluginViewFactory.isViewInited()) {
+                                pluginViewFactory.updateTable();
+                            }
+                            return;
+                        }
+                        Property property = lineToProperty(line);
+                        putProperty(property.getName(), property);
+                    }
+                }
+
+                @Override
+                public boolean isCancelled() {
+                    return false;
+                }
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private Property lineToProperty(String line) {
@@ -132,24 +139,25 @@ public class PropertyManager {
     }
 
     public void putProperty(String name, Property property) {
-        if (!properties.containsKey(name)) {
-            propertyNames.add(name);
-            properties.put(name, property);
+        if (!mProperties.containsKey(name)) {
+            mPropertyNames.add(name);
+            mProperties.put(name, property);
         } else {
+            mProperties.put(name, property);
             // Message : Already Contain
         }
     }
 
-    public void setProperty(String name, String value) throws Exception {
+    public void setPropertyValue(String name, String value) throws Exception {
         Property property = getProperty(name);
         if ("".equals(value)) {
-            Messages.showMessageDialog(project, "Cannot set property : value cannot be null", "Error", Messages.getInformationIcon());
+            Messages.showMessageDialog(mProject, "Cannot set property : value cannot be null.", "Error", Messages.getInformationIcon());
             throw new NullValueException();
         } else if (property == null) {
-            Messages.showMessageDialog(project, "Cannot set property : cannot find that property", "Error", Messages.getInformationIcon());
+            Messages.showMessageDialog(mProject, "Cannot set property : cannot find that property.", "Error", Messages.getInformationIcon());
             throw new Exception();
         } else {
-            currentDevice.executeShellCommand("setprop " + name + " " + value, new MultiLineReceiver() {
+            mCurrentDevice.executeShellCommand("setprop " + name + " " + value, new MultiLineReceiver() {
                 @Override
                 public void processNewLines(String[] strings) {
                     System.out.println("==== setprop result ====");
@@ -166,19 +174,14 @@ public class PropertyManager {
             // Test : is Done
 
             final String finalValue = value;
-            currentDevice.executeShellCommand("getprop " + name, new MultiLineReceiver() {
+            mCurrentDevice.executeShellCommand("getprop " + name, new MultiLineReceiver() {
                 @Override
                 public void processNewLines(String[] strings) {
                     if ("".equals(strings[0])) {
                         return;
                     }
                     if (!strings[0].trim().equals(finalValue)) {
-                        Messages.showMessageDialog(project, "Cannot set property. Returned to old value\n Please check adb is in root", "Error", Messages.getInformationIcon());
-                        try {
-                            throw new Exception();
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
+                        Messages.showMessageDialog(mProject, "Cannot set property now. Please save prop file and reboot device.", "Error", Messages.getInformationIcon());
                     }
                 }
 
@@ -192,10 +195,48 @@ public class PropertyManager {
     }
 
     public Property getProperty(String name) {
-        return properties.get(name);
+        return mProperties.get(name);
     }
 
     public ArrayList<String> getPropertyNames() {
-        return propertyNames;
+        return mPropertyNames;
+    }
+
+    public void restartRuntime() throws TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException, IOException {
+
+
+        mCurrentDevice.executeShellCommand("stop", new NullOutputReceiver());
+        mCurrentDevice.executeShellCommand("start", new NullOutputReceiver());
+    }
+
+    public void savePropFile(String path) {
+        Process process = null;
+        SimpleDateFormat simpleDataFormat = new SimpleDateFormat("yy-MM-dd.HHmmss.SSS");
+        String currentTime = simpleDataFormat.format(new Date());
+        try {
+            process = Runtime.getRuntime().exec("adb pull system/build.prop" + " " + path + File.separator + "build.prop(" + currentTime + ")");
+            process.waitFor();
+            // 기존 파일 프로젝트 디렉터리에 저장했다고 메시지
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        PropFileMaker propFileMaker = new PropFileMaker(this);
+        propFileMaker.makePropFileToPath(path + File.separator + "createdBuild.prop");
+        try {
+            process = Runtime.getRuntime().exec("adb remount");
+            process.waitFor();
+            process = Runtime.getRuntime().exec("adb push " + path + File.separator + "createdBuild.prop" + " " + "/system/build.prop");
+            process.waitFor();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void rebootDevice() throws TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException, IOException {
+        mCurrentDevice.executeShellCommand("reboot", new NullOutputReceiver());
     }
 }
