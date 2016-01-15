@@ -4,14 +4,15 @@ import com.android.ddmlib.*;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.ui.Messages;
+import com.intellij.rt.execution.testFrameworks.ProcessBuilder;
 import com.intellij.util.containers.HashMap;
 import com.intellij.util.text.StringTokenizer;
 import exception.NullValueException;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 
 
@@ -39,7 +40,18 @@ public class PropertyManager {
         mProject = mProjectManager.getDefaultProject();
 
         try {
-            Process process = Runtime.getRuntime().exec("adb root");
+            java.lang.ProcessBuilder processBuilder = new java.lang.ProcessBuilder("adb", "root");
+            processBuilder.environment().put("ANDROID_SERIAL", "emulator-5554");
+            Process process = processBuilder.start();
+
+            InputStream is = process.getErrorStream();
+            InputStreamReader isr = new InputStreamReader(is);
+            BufferedReader br = new BufferedReader(isr);
+            String line;
+
+            while ((line = br.readLine()) != null) {
+                System.out.println(line);
+            }
             process.waitFor();
         } catch (Exception e) {
             e.printStackTrace();
@@ -66,7 +78,8 @@ public class PropertyManager {
         AndroidDebugBridge.addDeviceChangeListener(new AndroidDebugBridge.IDeviceChangeListener() {
             @Override
             public void deviceConnected(IDevice iDevice) {
-                System.out.println("DeviceConnected");
+                PluginViewFactory.getInstance().setHint("Device Connected");
+                System.out.println("DeviceConnected : " + iDevice.getName());
                 mCurrentDevice = iDevice;
             }
 
@@ -78,10 +91,18 @@ public class PropertyManager {
 
             @Override
             public void deviceChanged(IDevice iDevice, int i) {
-                System.out.println("DeviceChanged");
+
+                System.out.println("DeviceChanged : " + iDevice.getName());
                 //deviceConnected(iDevice);
             }
         });
+    }
+
+    public ArrayList<String> getDeviceList() {
+        ArrayList<String> deviceList = new ArrayList<String>();
+        IDevice[] iDevices = mADB.getDevices();
+       // int l
+        return deviceList;
     }
 
     public PropertyManager(AndroidDebugBridge mADB) {
@@ -181,7 +202,7 @@ public class PropertyManager {
                         return;
                     }
                     if (!strings[0].trim().equals(finalValue)) {
-                        Messages.showMessageDialog(mProject, "Cannot set property now. Please save prop file and reboot device.", "Error", Messages.getInformationIcon());
+                        PluginViewFactory.getInstance().setHint("Cannot set property now. Please save prop file and reboot device.");
                     }
                 }
 

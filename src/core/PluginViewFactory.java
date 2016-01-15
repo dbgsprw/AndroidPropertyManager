@@ -1,6 +1,7 @@
 package core;
 
 import com.android.ddmlib.AdbCommandRejectedException;
+import com.android.ddmlib.AndroidDebugBridge;
 import com.android.ddmlib.ShellCommandUnresponsiveException;
 import com.android.ddmlib.TimeoutException;
 import com.intellij.ide.util.PropertiesComponent;
@@ -42,10 +43,13 @@ public class PluginViewFactory implements ToolWindowFactory {
     private JButton mSaveCustomTableButton;
     private JButton mSavePropFileButton;
     private JLabel mChangeTableLabel;
-    private JComboBox mTableViewComboBox;
+    private JComboBox mTableViewListComboBox;
     private JButton mRestartRuntimeButton;
     private JButton mRebootDeviceButton;
     private JButton mRefreshButton;
+    private JLabel mHintLabel;
+    private JComboBox mDeviceListComboBox;
+    private JLabel mDeviceListLabel;
     private PropNameComboBox mPropNameComboBox;
 
     private ArrayList<String> mTableViewList;
@@ -68,6 +72,7 @@ public class PluginViewFactory implements ToolWindowFactory {
         mPropertiesComponent = PropertiesComponent.getInstance(mProject);
         mPropNameComboBox = new PropNameComboBox(mPropertyManager.getPropertyNames());
         updateTableViewList();
+        updateDeviceList();
         viewComponentInit();
         updateTable();
 
@@ -83,9 +88,19 @@ public class PluginViewFactory implements ToolWindowFactory {
     }
 
     private void viewComponentInit() {
-        mTableViewComboBox.setEditable(true);
+        mDeviceListComboBox.setPrototypeDisplayValue("XXXXXXXXXXXXX");
 
-        mTableViewComboBox.addItemListener(new ItemListener() {
+        mDeviceListComboBox.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent itemEvent) {
+
+            }
+        });
+
+        mTableViewListComboBox.setPrototypeDisplayValue("XXXXXXXXXXXXX");
+        mTableViewListComboBox.setEditable(true);
+
+        mTableViewListComboBox.addItemListener(new ItemListener() {
             @Override
             public void itemStateChanged(ItemEvent itemEvent) {
                 if (itemEvent.getStateChange() == ItemEvent.DESELECTED) return;
@@ -98,6 +113,7 @@ public class PluginViewFactory implements ToolWindowFactory {
             }
         });
 
+
         mRefreshButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
@@ -108,14 +124,17 @@ public class PluginViewFactory implements ToolWindowFactory {
         mSaveCustomTableButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                String currentTableViewName = mTableViewComboBox.getSelectedItem().toString();
-                if (ALL_TABLE_VIEW_PROPERTY_NAME.equals(mTableViewComboBox.getSelectedItem())) {
+                String currentTableViewName = mTableViewListComboBox.getSelectedItem().toString();
+                if (ALL_TABLE_VIEW_PROPERTY_NAME.equals(mTableViewListComboBox.getSelectedItem())) {
                     showMessage("Cannot save at ALL table, please use custom table view", "Error");
                 }
                 ArrayList<String> propertyNameList = new ArrayList<String>();
                 int tableRowLength = mPropTable.getRowCount();
                 for (int i = 0; i < tableRowLength; i++) {
-                    propertyNameList.add(mPropTable.getValueAt(i, COLUMN_PROPERTY_NAME).toString());
+                    String propName = mPropTable.getValueAt(i, COLUMN_PROPERTY_NAME).toString();
+                    if (!"".equals(propName)) {
+                        propertyNameList.add(propName);
+                    }
                 }
                 mPropertiesComponent.setValues(currentTableViewName, propertyNameList.toArray(new String[propertyNameList.size()]));
             }
@@ -185,6 +204,7 @@ public class PluginViewFactory implements ToolWindowFactory {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
                 try {
+                    setHint("Please wait rebooting");
                     mPropertyManager.rebootDevice();
                 } catch (TimeoutException e) {
                     e.printStackTrace();
@@ -201,8 +221,16 @@ public class PluginViewFactory implements ToolWindowFactory {
         mPropertyManager.updatePropFromDevice();
     }
 
+    public void actionPerformed(ActionEvent abc, String abd) {
+
+    }
+
+    public void setHint(String text) {
+        mHintLabel.setText(text);
+    }
+
     public void updateTable() {
-        String selectedTableView = mTableViewComboBox.getSelectedItem().toString();
+        String selectedTableView = mTableViewListComboBox.getSelectedItem().toString();
         updateTable(selectedTableView);
     }
 
@@ -218,9 +246,12 @@ public class PluginViewFactory implements ToolWindowFactory {
         mIsUpdateDone = true;
     }
 
+    private void updateDeviceList() {
+       // AndroidDebugBridge.
+    }
 
     private void updateTableViewList() {
-        mTableViewComboBox.addItem(ALL_TABLE_VIEW_PROPERTY_NAME);
+        mTableViewListComboBox.addItem(ALL_TABLE_VIEW_PROPERTY_NAME);
         String[] tableViews = mPropertiesComponent.getValues(TABLE_VIEW_LIST_PROPERTY_NAME);
         if (tableViews == null) {
             mTableViewList = new ArrayList<String>();
@@ -228,7 +259,7 @@ public class PluginViewFactory implements ToolWindowFactory {
         }
         mTableViewList = new ArrayList<String>(Arrays.asList(tableViews));
         for (String tableView : mTableViewList) {
-            mTableViewComboBox.addItem(tableView);
+            mTableViewListComboBox.addItem(tableView);
         }
     }
 
@@ -260,7 +291,7 @@ public class PluginViewFactory implements ToolWindowFactory {
             if (!mTableViewList.contains(tableViewName)) {
                 mTableViewList.add(tableViewName);
                 mPropertiesComponent.setValues(TABLE_VIEW_LIST_PROPERTY_NAME, mTableViewList.toArray(new String[mTableViewList.size()]));
-                mTableViewComboBox.addItem(tableViewName);
+                mTableViewListComboBox.addItem(tableViewName);
             }
             values = new String[0];
         }
