@@ -4,7 +4,6 @@ import com.android.ddmlib.*;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.ui.Messages;
-import com.intellij.rt.execution.testFrameworks.ProcessBuilder;
 import com.intellij.util.containers.HashMap;
 import com.intellij.util.text.StringTokenizer;
 import exception.NullValueException;
@@ -12,7 +11,6 @@ import exception.NullValueException;
 import java.io.*;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 
 
@@ -22,40 +20,26 @@ import java.util.Date;
 public class PropertyManager {
     private static PropertyManager sPropertyManager;
     private HashMap<String, Property> mProperties;
+    private HashMap<String, IDevice> mDevices;
     private ArrayList<String> mPropertyNames;
     private String mAndroidHome;
     private AndroidDebugBridge mADB;
     private IDevice mCurrentDevice;
     private ProjectManager mProjectManager;
     private Project mProject;
+    private java.lang.ProcessBuilder mProcessBuilder;
+    private String mSelectedDeviceName;
 
 
     private PropertyManager() {
-
-
         mProperties = new HashMap<String, Property>();
+
+        mDevices = new HashMap<String, IDevice>();
         mPropertyNames = new ArrayList<String>();
 
         mProjectManager = ProjectManager.getInstance();
         mProject = mProjectManager.getDefaultProject();
-
-        try {
-            java.lang.ProcessBuilder processBuilder = new java.lang.ProcessBuilder("adb", "root");
-            processBuilder.environment().put("ANDROID_SERIAL", "emulator-5554");
-            Process process = processBuilder.start();
-
-            InputStream is = process.getErrorStream();
-            InputStreamReader isr = new InputStreamReader(is);
-            BufferedReader br = new BufferedReader(isr);
-            String line;
-
-            while ((line = br.readLine()) != null) {
-                System.out.println(line);
-            }
-            process.waitFor();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        mProcessBuilder = new java.lang.ProcessBuilder();
 
         mAndroidHome = System.getenv("ANDROID_HOME");
         if (mAndroidHome == null) {
@@ -74,19 +58,23 @@ public class PropertyManager {
             e.printStackTrace();
         }
 
-
         AndroidDebugBridge.addDeviceChangeListener(new AndroidDebugBridge.IDeviceChangeListener() {
             @Override
             public void deviceConnected(IDevice iDevice) {
                 PluginViewFactory.getInstance().setHint("Device Connected");
-                System.out.println("DeviceConnected : " + iDevice.getName());
-                mCurrentDevice = iDevice;
+                String deviceName = iDevice.getSerialNumber();
+                if (!mDevices.containsKey(deviceName)) {
+                    mDevices.put(deviceName, iDevice);
+                }
+                System.out.println("DeviceConnected : " + deviceName);
+                PluginViewFactory.getInstance().updateDeviceListComboBox();
             }
 
             @Override
             public void deviceDisconnected(IDevice iDevice) {
                 //  mCurrentDevice = null;
                 System.out.println("DeviceDisconnected");
+                PluginViewFactory.getInstance().updateDeviceListComboBox();
             }
 
             @Override
@@ -98,11 +86,61 @@ public class PropertyManager {
         });
     }
 
-    public ArrayList<String> getDeviceList() {
-        ArrayList<String> deviceList = new ArrayList<String>();
-        IDevice[] iDevices = mADB.getDevices();
-       // int l
-        return deviceList;
+    public Property getProperty(String name) {
+        return mProperties.get(name);
+    }
+
+    public void putProperty(String name, Property property) {
+        if (!mProperties.containsKey(name)) {
+            mPropertyNames.add(name);
+            mProperties.put(name, property);
+        } else {
+            mProperties.put(name, property);
+            // Message : Already Contain
+        }
+    }
+
+    public ArrayList<String> getDeviceNameList() {
+        ArrayList<String> deviceNameList = new ArrayList<String>();
+        IDevice[] devices = mADB.getDevices();
+        for (IDevice device : devices) {
+            deviceNameList.add(device.getSerialNumber());
+        }
+        return deviceNameList;
+    }
+
+    private void execAdbCommand(String... args) {
+        try {
+            ArrayList<String> command = new ArrayList<String>();
+            command.add("adb");
+            command.add("-s");
+            command.add(mSelectedDeviceName);
+            for (String arg : args) {
+                command.add(arg);
+            }
+            mProcessBuilder.command(command);
+            Process process = mProcessBuilder.start();
+
+            InputStream is = process.getErrorStream();
+            InputStreamReader isr = new InputStreamReader(is);
+            BufferedReader br = new BufferedReader(isr);
+            String line;
+
+            while ((line = br.readLine()) != null) {
+                System.out.println(line);
+            }
+            process.waitFor();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void changeDevice(String deviceName) {
+        mSelectedDeviceName = deviceName;
+        mCurrentDevice = mDevices.get(deviceName);
+        mProperties = new HashMap<String, Property>();
+        mPropertyNames = new ArrayList<String>();
+        execAdbCommand("root");
     }
 
     public PropertyManager(AndroidDebugBridge mADB) {
@@ -117,20 +155,15 @@ public class PropertyManager {
     }
 
     public void updatePropFromDevice() {
+
         try {
             mCurrentDevice.executeShellCommand("getprop", new MultiLineReceiver() {
                 @Override
                 public void processNewLines(String[] strings) {
                     for (String line : strings) {
-                        // 다 받았을 때
-                                /*
-                                출력이 다 끝난후 string == "" 하나가 옴
-                                 */
                         if ("".equals(line)) {
                             PluginViewFactory pluginViewFactory = PluginViewFactory.getInstance();
-                            if (pluginViewFactory.isViewInited()) {
-                                pluginViewFactory.updateTable();
-                            }
+                            pluginViewFactory.updateTable();
                             return;
                         }
                         Property property = lineToProperty(line);
@@ -143,9 +176,16 @@ public class PropertyManager {
                     return false;
                 }
             });
-        } catch (Exception e) {
+        } catch (TimeoutException e) {
+            e.printStackTrace();
+        } catch (AdbCommandRejectedException e) {
+            e.printStackTrace();
+        } catch (ShellCommandUnresponsiveException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
             e.printStackTrace();
         }
+
     }
 
     private Property lineToProperty(String line) {
@@ -159,24 +199,12 @@ public class PropertyManager {
         return new Property(name, value);
     }
 
-    public void putProperty(String name, Property property) {
-        if (!mProperties.containsKey(name)) {
-            mPropertyNames.add(name);
-            mProperties.put(name, property);
-        } else {
-            mProperties.put(name, property);
-            // Message : Already Contain
-        }
-    }
 
     public void setPropertyValue(String name, String value) throws Exception {
         Property property = getProperty(name);
         if ("".equals(value)) {
             Messages.showMessageDialog(mProject, "Cannot set property : value cannot be null.", "Error", Messages.getInformationIcon());
             throw new NullValueException();
-        } else if (property == null) {
-            Messages.showMessageDialog(mProject, "Cannot set property : cannot find that property.", "Error", Messages.getInformationIcon());
-            throw new Exception();
         } else {
             mCurrentDevice.executeShellCommand("setprop " + name + " " + value, new MultiLineReceiver() {
                 @Override
@@ -195,6 +223,7 @@ public class PropertyManager {
             // Test : is Done
 
             final String finalValue = value;
+
             mCurrentDevice.executeShellCommand("getprop " + name, new MultiLineReceiver() {
                 @Override
                 public void processNewLines(String[] strings) {
@@ -211,20 +240,16 @@ public class PropertyManager {
                     return false;
                 }
             });
-            property.setValue(value);
         }
+        property.setValue(value);
     }
 
-    public Property getProperty(String name) {
-        return mProperties.get(name);
-    }
 
     public ArrayList<String> getPropertyNames() {
         return mPropertyNames;
     }
 
     public void restartRuntime() throws TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException, IOException {
-
 
         mCurrentDevice.executeShellCommand("stop", new NullOutputReceiver());
         mCurrentDevice.executeShellCommand("start", new NullOutputReceiver());
@@ -235,29 +260,35 @@ public class PropertyManager {
         SimpleDateFormat simpleDataFormat = new SimpleDateFormat("yy-MM-dd.HHmmss.SSS");
         String currentTime = simpleDataFormat.format(new Date());
         try {
-            process = Runtime.getRuntime().exec("adb pull system/build.prop" + " " + path + File.separator + "build.prop(" + currentTime + ")");
-            process.waitFor();
-            // 기존 파일 프로젝트 디렉터리에 저장했다고 메시지
+            mCurrentDevice.pullFile("system/build.prop", path + File.separator + "build.prop(" + currentTime + ")");
+        } catch (AdbCommandRejectedException e) {
+            e.printStackTrace();
+        } catch (TimeoutException e) {
+            e.printStackTrace();
+        } catch (SyncException e) {
+            e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
         }
+
         PropFileMaker propFileMaker = new PropFileMaker(this);
         propFileMaker.makePropFileToPath(path + File.separator + "createdBuild.prop");
+        execAdbCommand("remount");
         try {
-            process = Runtime.getRuntime().exec("adb remount");
-            process.waitFor();
-            process = Runtime.getRuntime().exec("adb push " + path + File.separator + "createdBuild.prop" + " " + "/system/build.prop");
-            process.waitFor();
+            mCurrentDevice.pushFile(path + File.separator + "createdBuild.prop", "/system/build.prop");
         } catch (IOException e) {
             e.printStackTrace();
-        } catch (InterruptedException e) {
+        } catch (AdbCommandRejectedException e) {
+            e.printStackTrace();
+        } catch (TimeoutException e) {
+            e.printStackTrace();
+        } catch (SyncException e) {
             e.printStackTrace();
         }
+
     }
 
     public void rebootDevice() throws TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException, IOException {
-        mCurrentDevice.executeShellCommand("reboot", new NullOutputReceiver());
+        mCurrentDevice.reboot(null);
     }
 }

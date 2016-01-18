@@ -83,19 +83,24 @@ public class PluginViewFactory implements ToolWindowFactory {
         mIsViewInited = true;
     }
 
-    public boolean isViewInited() {
-        return mIsViewInited;
+    public void updateDeviceListComboBox() {
+        mDeviceListComboBox.removeAllItems();
+        ArrayList<String> deviceNameList = mPropertyManager.getDeviceNameList();
+        for (String deviceName : deviceNameList) {
+            mDeviceListComboBox.addItem(deviceName);
+        }
     }
 
     private void viewComponentInit() {
         mDeviceListComboBox.setPrototypeDisplayValue("XXXXXXXXXXXXX");
-
         mDeviceListComboBox.addItemListener(new ItemListener() {
             @Override
             public void itemStateChanged(ItemEvent itemEvent) {
-
+                mPropertyManager.changeDevice(itemEvent.getItem().toString());
+                mPropertyManager.updatePropFromDevice();
             }
         });
+        mPropertyManager.changeDevice(mDeviceListComboBox.getSelectedItem().toString());
 
         mTableViewListComboBox.setPrototypeDisplayValue("XXXXXXXXXXXXX");
         mTableViewListComboBox.setEditable(true);
