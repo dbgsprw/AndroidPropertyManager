@@ -1,7 +1,6 @@
-package core;
+package view;
 
 import com.android.ddmlib.AdbCommandRejectedException;
-import com.android.ddmlib.AndroidDebugBridge;
 import com.android.ddmlib.ShellCommandUnresponsiveException;
 import com.android.ddmlib.TimeoutException;
 import com.intellij.ide.util.PropertiesComponent;
@@ -11,6 +10,8 @@ import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowFactory;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
+import core.DeviceManager;
+import core.Property;
 import exception.NullValueException;
 
 import javax.swing.*;
@@ -35,7 +36,7 @@ public class PluginViewFactory implements ToolWindowFactory {
     private static PluginViewFactory sPluginViewFactory;
     private Project mProject;
     private PropertiesComponent mPropertiesComponent;
-    private core.PropertyManager mPropertyManager;
+    private DeviceManager mDeviceManager;
 
     private ToolWindow mToolWindow;
     private JPanel mPluginViewContent;
@@ -60,7 +61,7 @@ public class PluginViewFactory implements ToolWindowFactory {
 
     public PluginViewFactory() {
         sPluginViewFactory = this;
-        mPropertyManager = PropertyManager.getInstance();
+        mDeviceManager = DeviceManager.getInstance();
     }
 
     public static PluginViewFactory getInstance() {
@@ -70,7 +71,7 @@ public class PluginViewFactory implements ToolWindowFactory {
     public void createToolWindowContent(Project project, ToolWindow toolWindow) {
         mProject = project;
         mPropertiesComponent = PropertiesComponent.getInstance(mProject);
-        mPropNameComboBox = new PropNameComboBox(mPropertyManager.getPropertyNames());
+        mPropNameComboBox = new PropNameComboBox(mDeviceManager.getPropertyNames());
         updateTableViewList();
         updateDeviceList();
         viewComponentInit();
@@ -85,7 +86,7 @@ public class PluginViewFactory implements ToolWindowFactory {
 
     public void updateDeviceListComboBox() {
         mDeviceListComboBox.removeAllItems();
-        ArrayList<String> deviceNameList = mPropertyManager.getDeviceNameList();
+        ArrayList<String> deviceNameList = mDeviceManager.getConnectedDeviceNameList();
         for (String deviceName : deviceNameList) {
             mDeviceListComboBox.addItem(deviceName);
         }
@@ -96,11 +97,11 @@ public class PluginViewFactory implements ToolWindowFactory {
         mDeviceListComboBox.addItemListener(new ItemListener() {
             @Override
             public void itemStateChanged(ItemEvent itemEvent) {
-                mPropertyManager.changeDevice(itemEvent.getItem().toString());
-                mPropertyManager.updatePropFromDevice();
+                mDeviceManager.changeDevice(itemEvent.getItem().toString());
+                mDeviceManager.updatePropFromDevice();
             }
         });
-        mPropertyManager.changeDevice(mDeviceListComboBox.getSelectedItem().toString());
+        mDeviceManager.changeDevice(mDeviceListComboBox.getSelectedItem().toString());
 
         mTableViewListComboBox.setPrototypeDisplayValue("XXXXXXXXXXXXX");
         mTableViewListComboBox.setEditable(true);
@@ -122,7 +123,7 @@ public class PluginViewFactory implements ToolWindowFactory {
         mRefreshButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                mPropertyManager.updatePropFromDevice();
+                mDeviceManager.updatePropFromDevice();
             }
         });
 
@@ -161,12 +162,12 @@ public class PluginViewFactory implements ToolWindowFactory {
                 if (col == 0) {
                     cellChangeToCurrentValueAtRow(row);
                 } else if (col == 1) {
-                    Property property = mPropertyManager.getProperty(name);
+                    Property property = mDeviceManager.getProperty(name);
                     if (property != null) {
                         String value = mPropTable.getValueAt(row, COLUMN_PROPERTY_VALUE).toString();
-                        if (!value.equals(mPropertyManager.getProperty(name))) {
+                        if (!value.equals(mDeviceManager.getProperty(name))) {
                             try {
-                                mPropertyManager.setPropertyValue(name, value);
+                                mDeviceManager.setPropertyValue(name, value);
                             } catch (NullValueException e) {
                                 cellChangeToCurrentValueAtRow(row);
                                 e.printStackTrace();
@@ -184,7 +185,7 @@ public class PluginViewFactory implements ToolWindowFactory {
         mSavePropFileButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                mPropertyManager.savePropFile(mProject.getBasePath());
+                mDeviceManager.savePropFile(mProject.getBasePath());
             }
         });
 
@@ -192,7 +193,7 @@ public class PluginViewFactory implements ToolWindowFactory {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
                 try {
-                    mPropertyManager.restartRuntime();
+                    mDeviceManager.restartRuntime();
                 } catch (TimeoutException e) {
                     e.printStackTrace();
                 } catch (AdbCommandRejectedException e) {
@@ -210,7 +211,7 @@ public class PluginViewFactory implements ToolWindowFactory {
             public void actionPerformed(ActionEvent actionEvent) {
                 try {
                     setHint("Please wait rebooting");
-                    mPropertyManager.rebootDevice();
+                    mDeviceManager.rebootDevice();
                 } catch (TimeoutException e) {
                     e.printStackTrace();
                 } catch (AdbCommandRejectedException e) {
@@ -223,7 +224,7 @@ public class PluginViewFactory implements ToolWindowFactory {
             }
         });
 
-        mPropertyManager.updatePropFromDevice();
+        mDeviceManager.updatePropFromDevice();
     }
 
     public void actionPerformed(ActionEvent abc, String abd) {
@@ -240,7 +241,7 @@ public class PluginViewFactory implements ToolWindowFactory {
     }
 
     public void updateTable(String selectedTableView) {
-        mPropNameComboBox.setDataList(mPropertyManager.getPropertyNames());
+        mPropNameComboBox.setDataList(mDeviceManager.getPropertyNames());
 
         mIsUpdateDone = false;
         if (ALL_TABLE_VIEW_PROPERTY_NAME.equals(selectedTableView)) {
@@ -276,7 +277,7 @@ public class PluginViewFactory implements ToolWindowFactory {
 
             mPropTable.setValueAt(propertyName, i, COLUMN_PROPERTY_NAME);
 
-            mPropTable.setValueAt(mPropertyManager.getProperty(propertyName).getValue(), i, COLUMN_PROPERTY_VALUE);
+            mPropTable.setValueAt(mDeviceManager.getProperty(propertyName).getValue(), i, COLUMN_PROPERTY_VALUE);
         }
         for (int i = propertyLength; i < tableRowLength; i++) {
             mPropTable.setValueAt("", i, COLUMN_PROPERTY_NAME);
@@ -286,7 +287,7 @@ public class PluginViewFactory implements ToolWindowFactory {
     }
 
     private void showAllProperty() {
-        ArrayList<String> propertyNames = mPropertyManager.getPropertyNames();
+        ArrayList<String> propertyNames = mDeviceManager.getPropertyNames();
         showProperty(propertyNames);
     }
 
@@ -307,17 +308,17 @@ public class PluginViewFactory implements ToolWindowFactory {
 
     private void cellChangeToCurrentValueAtRow(int row) {
         String name = mPropTable.getValueAt(row, COLUMN_PROPERTY_NAME).toString();
-        Property property = mPropertyManager.getProperty(name);
+        Property property = mDeviceManager.getProperty(name);
         if ("".equals(name)) {
             return;
         }
         if (property == null) {
-            mPropertyManager.putProperty(name, new Property(name, null));
+            mDeviceManager.putProperty(name, new Property(name, null));
         }
         String value;
-        value = mPropertyManager.getProperty(name).getValue();
+        value = mDeviceManager.getProperty(name).getValue();
         if (value != null) {
-            mPropTable.setValueAt(mPropertyManager.getProperty(name).getValue(), row, COLUMN_PROPERTY_VALUE);
+            mPropTable.setValueAt(mDeviceManager.getProperty(name).getValue(), row, COLUMN_PROPERTY_VALUE);
         }
     }
 

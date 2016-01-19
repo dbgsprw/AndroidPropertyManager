@@ -1,4 +1,4 @@
-package core;
+package view;
 
 import javax.swing.table.DefaultTableModel;
 
@@ -20,7 +20,6 @@ public class PropertyTableModel extends DefaultTableModel {
                 return "Value";
         }
     }
-
 
     @Override
     public int getColumnCount() {

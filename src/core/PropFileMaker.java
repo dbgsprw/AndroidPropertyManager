@@ -10,10 +10,10 @@ import java.util.ArrayList;
  */
 public class PropFileMaker {
 
-    private PropertyManager mPropertyManager;
+    private DeviceManager mDeviceManager;
 
-    public PropFileMaker(PropertyManager propertyManager) {
-        this.mPropertyManager = propertyManager;
+    public PropFileMaker(DeviceManager deviceManager) {
+        this.mDeviceManager = deviceManager;
     }
 
     public void makePropFileToPath(String path) {
@@ -24,9 +24,9 @@ public class PropFileMaker {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        ArrayList<String> propertyNameList = mPropertyManager.getPropertyNames();
+        ArrayList<String> propertyNameList = mDeviceManager.getPropertyNames();
         for (String propertyName : propertyNameList) {
-            Property property = mPropertyManager.getProperty(propertyName);
+            Property property = mDeviceManager.getProperty(propertyName);
             try {
                 fileWriter.append(property.toString() + "\n");
 

@@ -1,4 +1,4 @@
-package core;
+package view;
 
 import lib.Java2sAutoComboBox;
 
@@ -18,12 +18,8 @@ public class PropNameComboBox extends Java2sAutoComboBox {
         addItemListener(new ItemListener() {
             @Override
             public void itemStateChanged(ItemEvent itemEvent) {
-                // Cell Data changed
                 if (itemEvent.getStateChange() == ItemEvent.SELECTED) {
                     PropNameComboBox propNameComboBox = (PropNameComboBox) itemEvent.getSource();
-                    //      propNameComboBox.table
-
-
                 }
             }
         });

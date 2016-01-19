@@ -13,7 +13,7 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <toolWindow id="Android Property Manager" secondary="true" icon="/core/plus.png" anchor="right"
-                    factoryClass="core.PluginViewFactory"/>
+                    factoryClass="view.PluginViewFactory"/>
 
     </extensions>
 
