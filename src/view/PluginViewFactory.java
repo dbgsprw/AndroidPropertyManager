@@ -85,6 +85,19 @@ public class PluginViewFactory implements ToolWindowFactory {
         toolWindow.getContentManager().addContent(content);
     }
 
+    private void deviceStateChanged() {
+        Object item = mDeviceListComboBox.getSelectedItem();
+        if(item == null) {
+            mPropTable.setEnabled(false);
+            mPropTable.setBackground(Color.gray);
+        }
+        else {
+            mPropTable.setEnabled(true);
+            mPropTable.setBackground(DEFAULT_TABLE_BACKGROUND_COLOR);
+        }
+        mDeviceManager.changeDevice(mDeviceListComboBox.getSelectedItem().toString());
+    }
+
     private void viewComponentInit() {
         TableCellEditor editor = new DefaultCellEditor(mPropNameComboBox);
         mPropTable.setRowHeight(30);
@@ -126,13 +139,13 @@ public class PluginViewFactory implements ToolWindowFactory {
         mDeviceListComboBox.addItemListener(new ItemListener() {
             @Override
             public void itemStateChanged(ItemEvent itemEvent) {
-                Object test = itemEvent.getItem();
-                mDeviceManager.changeDevice(itemEvent.getItem().toString());
+                if(ItemEvent.SELECTED == itemEvent.getStateChange()) {
+                    deviceStateChanged();
+                }
+
             }
         });
-        if (mDeviceListComboBox.getSelectedItem() != null) {
-            mDeviceManager.changeDevice(mDeviceListComboBox.getSelectedItem().toString());
-        }
+        deviceStateChanged();
 
 
         mTableViewListComboBox.setPrototypeDisplayValue("XXXXXXXXXXXXX");
@@ -224,13 +237,6 @@ public class PluginViewFactory implements ToolWindowFactory {
     public void updateDeviceListComboBox() {
         mDeviceListComboBox.removeAllItems();
         ArrayList<String> deviceNameList = mDeviceManager.getConnectedDeviceNameList();
-        if (deviceNameList.size() == 0) {
-            mPropTable.setEnabled(false);
-            mPropTable.setBackground(Color.gray);
-        } else {
-            mPropTable.setEnabled(true);
-            mPropTable.setBackground(DEFAULT_TABLE_BACKGROUND_COLOR);
-        }
         for (String deviceName : deviceNameList) {
             mDeviceListComboBox.addItem(deviceName);
         }

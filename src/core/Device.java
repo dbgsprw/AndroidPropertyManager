@@ -27,13 +27,15 @@ public class Device {
     private java.lang.ProcessBuilder mProcessBuilder;
     private String name;
 
+
     public Device(IDevice IDevice) {
         mIDevice = IDevice;
         mProperties = new HashMap<String, Property>();
         mPropertyNames = new ArrayList<>();
         mProcessBuilder = new java.lang.ProcessBuilder();
-        name = IDevice.getName();
+        name = IDevice.getSerialNumber();
         executeAdbCommand("root");
+
     }
 
     public HashMap<String, Property> getProperties() {
@@ -134,6 +136,11 @@ public class Device {
 
     public ArrayList<String> getPropertyNames() {
         return mPropertyNames;
+    }
+
+    public class DeviceState {
+        public final static int UNAUTHORIZED = 0;
+        public final static int USER_MODE = 1;
     }
 
 }
