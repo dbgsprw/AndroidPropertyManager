@@ -85,17 +85,28 @@ public class PluginViewFactory implements ToolWindowFactory {
         toolWindow.getContentManager().addContent(content);
     }
 
-    private void deviceStateChanged() {
-        Object item = mDeviceListComboBox.getSelectedItem();
-        if(item == null) {
-            mPropTable.setEnabled(false);
-            mPropTable.setBackground(Color.gray);
-        }
-        else {
-            mPropTable.setEnabled(true);
-            mPropTable.setBackground(DEFAULT_TABLE_BACKGROUND_COLOR);
-        }
+    public void deviceStateChanged() {
         mDeviceManager.changeDevice(mDeviceListComboBox.getSelectedItem().toString());
+
+        switch (mDeviceManager.getCurrentDeviceState()) {
+            case DeviceManager.DeviceState.PROPERTY_EDITABLE:
+                mPropTable.setEnabled(true);
+                mPropTable.setBackground(DEFAULT_TABLE_BACKGROUND_COLOR);
+                setHint("Device is connected");
+                break;
+            case DeviceManager.DeviceState.PROPERTY_SHOWABLE:
+                mPropTable.setEnabled(false);
+                mPropTable.setBackground(new Color(230, 230, 230));
+                setHint("Device is user-mode : You can't edit value");
+                break;
+            case DeviceManager.DeviceState.UNAUTHORIZED:
+                mPropTable.setEnabled(false);
+                mPropTable.setBackground(new Color(230, 230, 230));
+                clearTable();
+                setHint("Device is unauthorized");
+                break;
+        }
+
     }
 
     private void viewComponentInit() {
@@ -234,9 +245,25 @@ public class PluginViewFactory implements ToolWindowFactory {
         });
     }
 
+    public void clearTable() {
+        int tableRowLength = mPropTable.getRowCount();
+        mIsUpdateDone = false;
+        for (int i = 0; i < tableRowLength; i++) {
+            mPropTable.setValueAt("", i, COLUMN_PROPERTY_NAME);
+            mPropTable.setValueAt("", i, COLUMN_PROPERTY_VALUE);
+        }
+        mIsUpdateDone = true;
+    }
+
     public void updateDeviceListComboBox() {
         mDeviceListComboBox.removeAllItems();
         ArrayList<String> deviceNameList = mDeviceManager.getConnectedDeviceNameList();
+        if(deviceNameList.size() == 0) {
+            setHint("Can't find device");
+            mPropTable.setEnabled(false);
+            mPropTable.setBackground(DEFAULT_TABLE_BACKGROUND_COLOR);
+            clearTable();
+        }
         for (String deviceName : deviceNameList) {
             mDeviceListComboBox.addItem(deviceName);
         }

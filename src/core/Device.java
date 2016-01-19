@@ -26,6 +26,8 @@ public class Device {
     private ArrayList<String> mPropertyNames;
     private java.lang.ProcessBuilder mProcessBuilder;
     private String name;
+    private boolean isRootMode;
+
 
 
     public Device(IDevice IDevice) {
@@ -35,8 +37,32 @@ public class Device {
         mProcessBuilder = new java.lang.ProcessBuilder();
         name = IDevice.getSerialNumber();
         executeAdbCommand("root");
+        executeShellCommand("id -u", new MultiLineReceiver() {
+            @Override
+            public void processNewLines(String[] lines) {
+                if("0".equals(lines[0])) {
+                    isRootMode = true;
+                }
+            }
 
+            @Override
+            public boolean isCancelled() {
+                return false;
+            }
+        });
     }
+
+    public boolean isRootMode() {
+        return isRootMode;
+    }
+
+    public boolean isUnauthorized() {
+        if (mIDevice.getState() == IDevice.DeviceState.UNAUTHORIZED) {
+            return true;
+        }
+        return false;
+    }
+
 
     public HashMap<String, Property> getProperties() {
         return mProperties;
@@ -154,11 +180,6 @@ public class Device {
 
     public ArrayList<String> getPropertyNames() {
         return mPropertyNames;
-    }
-
-    public class DeviceState {
-        public final static int UNAUTHORIZED = 0;
-        public final static int USER_MODE = 1;
     }
 
 }
