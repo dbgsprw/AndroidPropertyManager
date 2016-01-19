@@ -76,6 +76,20 @@ public class Device {
         property.setValue(value);
     }
 
+    public void executeShellCommand(String command) {
+        try {
+            mIDevice.executeShellCommand(command, new NullOutputReceiver());
+        } catch (TimeoutException e) {
+            e.printStackTrace();
+        } catch (AdbCommandRejectedException e) {
+            e.printStackTrace();
+        } catch (ShellCommandUnresponsiveException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     public void executeShellCommand(String command, IShellOutputReceiver receiver) {
         try {
             mIDevice.executeShellCommand(command, receiver);
@@ -90,7 +104,7 @@ public class Device {
         }
     }
 
-    public void executeAdbCommand(String... args) {
+    private void executeAdbCommand(String... args) {
         try {
             ArrayList<String> command = new ArrayList<String>();
             command.add("adb");
@@ -114,6 +128,10 @@ public class Device {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public void remount() {
+        executeAdbCommand("remount");
     }
 
     public String getSerialNumber() {

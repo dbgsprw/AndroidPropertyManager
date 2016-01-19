@@ -151,8 +151,8 @@ public class DeviceManager {
     }
 
     public void restartRuntime() throws TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException, IOException {
-        mDevice.executeShellCommand("stop", new NullOutputReceiver());
-        mDevice.executeShellCommand("start", new NullOutputReceiver());
+        mDevice.executeShellCommand("stop");
+        mDevice.executeShellCommand("start");
     }
 
     public void savePropFile(String path) {
@@ -172,7 +172,7 @@ public class DeviceManager {
 
         PropFileMaker propFileMaker = new PropFileMaker(this);
         propFileMaker.makePropFileToPath(path + File.separator + "createdBuild.prop");
-        mDevice.executeAdbCommand("remount");
+        mDevice.remount();
         try {
             mDevice.pushFile(path + File.separator + "createdBuild.prop", "/system/build.prop");
         } catch (IOException e) {
