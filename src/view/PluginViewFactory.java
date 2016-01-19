@@ -56,7 +56,6 @@ public class PluginViewFactory implements ToolWindowFactory {
     private ArrayList<String> mTableViewList;
 
     private boolean mIsUpdateDone;
-    private boolean mIsViewInited = false;
 
 
     public PluginViewFactory() {
@@ -73,7 +72,6 @@ public class PluginViewFactory implements ToolWindowFactory {
         mPropertiesComponent = PropertiesComponent.getInstance(mProject);
         mPropNameComboBox = new PropNameComboBox(mDeviceManager.getPropertyNames());
         updateTableViewList();
-        updateDeviceList();
         viewComponentInit();
         updateTable();
 
@@ -81,24 +79,50 @@ public class PluginViewFactory implements ToolWindowFactory {
         ContentFactory contentFactory = ContentFactory.SERVICE.getInstance();
         Content content = contentFactory.createContent(mPluginViewContent, "", false);
         toolWindow.getContentManager().addContent(content);
-        mIsViewInited = true;
-    }
-
-    public void updateDeviceListComboBox() {
-        mDeviceListComboBox.removeAllItems();
-        ArrayList<String> deviceNameList = mDeviceManager.getConnectedDeviceNameList();
-        for (String deviceName : deviceNameList) {
-            mDeviceListComboBox.addItem(deviceName);
-        }
     }
 
     private void viewComponentInit() {
+        TableCellEditor editor = new DefaultCellEditor(mPropNameComboBox);
+        mPropTable.setRowHeight(30);
+        mPropTable.setModel(new PropertyTableModel());
+        mPropTable.setAutoscrolls(true);
+        mPropTable.getColumnModel().getColumn(COLUMN_PROPERTY_NAME).setCellEditor(editor);
+        mPropTable.getModel().addTableModelListener(new TableModelListener() {
+            @Override
+            public void tableChanged(TableModelEvent tableModelEvent) {
+
+                if (mIsUpdateDone == false) return;
+                int row = tableModelEvent.getFirstRow();
+                int col = tableModelEvent.getColumn();
+                String name = mPropTable.getValueAt(row, COLUMN_PROPERTY_NAME).toString();
+                if (col == COLUMN_PROPERTY_NAME) {
+                    cellChangeToCurrentValueAtRow(row);
+                } else if (col == COLUMN_PROPERTY_VALUE) {
+                    Property property = mDeviceManager.getProperty(name);
+                    if (property != null) {
+                        String value = mPropTable.getValueAt(row, COLUMN_PROPERTY_VALUE).toString();
+                        if (!value.equals(mDeviceManager.getProperty(name))) {
+                            try {
+                                mDeviceManager.setPropertyValue(name, value);
+                            } catch (NullValueException e) {
+                                cellChangeToCurrentValueAtRow(row);
+                                e.printStackTrace();
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }
+                } else {
+                    System.out.println("Error : Col Number Over");
+                }
+            }
+        });
+
         mDeviceListComboBox.setPrototypeDisplayValue("XXXXXXXXXXXXX");
         mDeviceListComboBox.addItemListener(new ItemListener() {
             @Override
             public void itemStateChanged(ItemEvent itemEvent) {
                 mDeviceManager.changeDevice(itemEvent.getItem().toString());
-                mDeviceManager.updatePropFromDevice();
             }
         });
         mDeviceManager.changeDevice(mDeviceListComboBox.getSelectedItem().toString());
@@ -143,42 +167,6 @@ public class PluginViewFactory implements ToolWindowFactory {
                     }
                 }
                 mPropertiesComponent.setValues(currentTableViewName, propertyNameList.toArray(new String[propertyNameList.size()]));
-            }
-        });
-
-        TableCellEditor editor = new DefaultCellEditor(mPropNameComboBox);
-        mPropTable.setRowHeight(30);
-        mPropTable.setModel(new PropertyTableModel());
-        mPropTable.setAutoscrolls(true);
-        mPropTable.getColumnModel().getColumn(COLUMN_PROPERTY_NAME).setCellEditor(editor);
-        mPropTable.getModel().addTableModelListener(new TableModelListener() {
-            @Override
-            public void tableChanged(TableModelEvent tableModelEvent) {
-
-                if (mIsUpdateDone == false) return;
-                int row = tableModelEvent.getFirstRow();
-                int col = tableModelEvent.getColumn();
-                String name = mPropTable.getValueAt(row, COLUMN_PROPERTY_NAME).toString();
-                if (col == 0) {
-                    cellChangeToCurrentValueAtRow(row);
-                } else if (col == 1) {
-                    Property property = mDeviceManager.getProperty(name);
-                    if (property != null) {
-                        String value = mPropTable.getValueAt(row, COLUMN_PROPERTY_VALUE).toString();
-                        if (!value.equals(mDeviceManager.getProperty(name))) {
-                            try {
-                                mDeviceManager.setPropertyValue(name, value);
-                            } catch (NullValueException e) {
-                                cellChangeToCurrentValueAtRow(row);
-                                e.printStackTrace();
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    }
-                } else {
-                    System.out.println("Error : Col Number Over");
-                }
             }
         });
 
@@ -227,12 +215,12 @@ public class PluginViewFactory implements ToolWindowFactory {
         mDeviceManager.updatePropFromDevice();
     }
 
-    public void actionPerformed(ActionEvent abc, String abd) {
-
-    }
-
-    public void setHint(String text) {
-        mHintLabel.setText(text);
+    public void updateDeviceListComboBox() {
+        mDeviceListComboBox.removeAllItems();
+        ArrayList<String> deviceNameList = mDeviceManager.getConnectedDeviceNameList();
+        for (String deviceName : deviceNameList) {
+            mDeviceListComboBox.addItem(deviceName);
+        }
     }
 
     public void updateTable() {
@@ -250,10 +238,6 @@ public class PluginViewFactory implements ToolWindowFactory {
             showSelectedTableViewProperty(selectedTableView);
         }
         mIsUpdateDone = true;
-    }
-
-    private void updateDeviceList() {
-       // AndroidDebugBridge.
     }
 
     private void updateTableViewList() {
@@ -320,6 +304,10 @@ public class PluginViewFactory implements ToolWindowFactory {
         if (value != null) {
             mPropTable.setValueAt(mDeviceManager.getProperty(name).getValue(), row, COLUMN_PROPERTY_VALUE);
         }
+    }
+
+    public void setHint(String text) {
+        mHintLabel.setText(text);
     }
 
     public void showMessage(String message, String type) {

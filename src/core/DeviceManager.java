@@ -27,7 +27,6 @@ public class DeviceManager {
     private ProjectManager mProjectManager;
     private Project mProject;
 
-
     private DeviceManager() {
         mDevices = new HashMap<String, Device>();
 
@@ -91,63 +90,20 @@ public class DeviceManager {
         });
     }
 
+    public void putProperty(String name, Property property) {
+        mDevice.putProperty(name, property);
+    }
+
     public Property getProperty(String name) {
         return mDevice.getProperty(name);
     }
 
     public void setPropertyValue(String name, String value) throws NullValueException {
-        Property property = getProperty(name);
         if ("".equals(value)) {
             Messages.showMessageDialog(mProject, "Cannot set property : value cannot be null.", "Error", Messages.getInformationIcon());
             throw new NullValueException();
-        } else {
-            mDevice.executeShellCommand("setprop " + name + " " + value, new MultiLineReceiver() {
-                @Override
-                public void processNewLines(String[] strings) {
-                    System.out.println("==== setprop result ====");
-                    for (String line : strings) {
-                        System.out.println(line);
-                    }
-                }
-
-                @Override
-                public boolean isCancelled() {
-                    return false;
-                }
-            });
-            // Test : is Done
-
-            final String finalValue = value;
-
-            mDevice.executeShellCommand("getprop " + name, new MultiLineReceiver() {
-                @Override
-                public void processNewLines(String[] strings) {
-                    if ("".equals(strings[0])) {
-                        return;
-                    }
-                    if (!strings[0].trim().equals(finalValue)) {
-                        PluginViewFactory.getInstance().setHint("Cannot set property now. Please save prop file and reboot device.");
-                    }
-                }
-
-                @Override
-                public boolean isCancelled() {
-                    return false;
-                }
-            });
         }
-        property.setValue(value);
-    }
-
-    public void putProperty(String name, Property property) {
-        HashMap<String, Property> properties = mDevice.getProperties();
-        if (!properties.containsKey(name)) {
-            mDevice.getPropertyNames().add(name);
-            properties.put(name, property);
-        } else {
-            properties.put(name, property);
-            // Message : Already Contain
-        }
+        mDevice.setPropertyValue(name, value);
     }
 
     public ArrayList<String> getConnectedDeviceNameList() {
@@ -161,10 +117,10 @@ public class DeviceManager {
 
     public void changeDevice(String deviceName) {
         mDevice = mDevices.get(deviceName);
+        updatePropFromDevice();
     }
 
     public void updatePropFromDevice() {
-
         mDevice.executeShellCommand("getprop", new MultiLineReceiver() {
             @Override
             public void processNewLines(String[] strings) {
@@ -185,17 +141,6 @@ public class DeviceManager {
             }
         });
 
-    }
-
-    private Property lineToProperty(String line) {
-        StringTokenizer stringTokenizer;
-        String name, value;
-        line = line.substring(1);
-        stringTokenizer = new StringTokenizer(line);
-        name = stringTokenizer.nextToken("]");
-        value = stringTokenizer.nextToken().substring(3);
-
-        return new Property(name, value);
     }
 
     public ArrayList<String> getPropertyNames() {
@@ -244,5 +189,16 @@ public class DeviceManager {
 
     public void rebootDevice() throws TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException, IOException {
         mDevice.reboot(null);
+    }
+
+    private Property lineToProperty(String line) {
+        StringTokenizer stringTokenizer;
+        String name, value;
+        line = line.substring(1);
+        stringTokenizer = new StringTokenizer(line);
+        name = stringTokenizer.nextToken("]");
+        value = stringTokenizer.nextToken().substring(3);
+
+        return new Property(name, value);
     }
 }

@@ -2,7 +2,10 @@ package core;
 
 import com.android.ddmlib.*;
 import com.android.ddmlib.log.LogReceiver;
+import com.intellij.openapi.ui.Messages;
 import com.intellij.util.containers.HashMap;
+import exception.NullValueException;
+import view.PluginViewFactory;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -35,6 +38,42 @@ public class Device {
 
     public HashMap<String, Property> getProperties() {
         return mProperties;
+    }
+
+    public void putProperty(String name, Property property) {
+        if (!mProperties.containsKey(name)) {
+            getPropertyNames().add(name);
+            mProperties.put(name, property);
+        } else {
+            mProperties.put(name, property);
+        }
+    }
+
+    public Property getProperty(String name) {
+        return mProperties.get(name);
+    }
+
+    public void setPropertyValue(String name, String value) {
+        Property property = getProperty(name);
+        executeShellCommand("setprop " + name + " " + value, new NullOutputReceiver());
+        final String finalValue = value;
+        executeShellCommand("getprop " + name, new MultiLineReceiver() {
+            @Override
+            public void processNewLines(String[] strings) {
+                if ("".equals(strings[0])) {
+                    return;
+                }
+                if (!strings[0].trim().equals(finalValue)) {
+                    PluginViewFactory.getInstance().setHint("Cannot set property now. Please save prop file and reboot device.");
+                }
+            }
+
+            @Override
+            public boolean isCancelled() {
+                return false;
+            }
+        });
+        property.setValue(value);
     }
 
     public void executeShellCommand(String command, IShellOutputReceiver receiver) {
@@ -93,11 +132,8 @@ public class Device {
         mIDevice.pullFile(remote, local);
     }
 
-    public Property getProperty(String name) {
-        return mProperties.get(name);
-    }
-
     public ArrayList<String> getPropertyNames() {
         return mPropertyNames;
     }
+
 }
