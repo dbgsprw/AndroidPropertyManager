@@ -140,6 +140,26 @@ public class DeviceManager {
                 return false;
             }
         });
+    }
+
+    public interface DeviceState {
+        public final static int PROPERTY_EDITABLE = 0;
+        public final static int PROPERTY_SHOWABLE = 1;
+        public final static int UNAUTHORIZED = 2;
+    }
+
+    public int getCurrentDeviceState() {
+        if (mDevice.isRootMode()) {
+            return DeviceState.PROPERTY_EDITABLE;
+        }
+        else {
+           if (mDevice.isUnauthorized()) {
+               return DeviceState.UNAUTHORIZED;
+           }
+            else {
+               return DeviceState.PROPERTY_SHOWABLE;
+           }
+        }
 
     }
 
