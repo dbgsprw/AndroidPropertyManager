@@ -28,7 +28,7 @@ public class DeviceManager {
     private Project mProject;
 
     private DeviceManager() {
-        mDevices = new HashMap<String, Device>();
+        mDevices = new HashMap<>();
 
         mProjectManager = ProjectManager.getInstance();
         mProject = mProjectManager.getDefaultProject();
@@ -71,21 +71,30 @@ public class DeviceManager {
                     mDevices.put(deviceName, device);
                 }
                 System.out.println("Device Connected : " + deviceName);
-                PluginViewFactory.getInstance().updateDeviceListComboBox();
+                PluginViewFactory pluginViewFactory = PluginViewFactory.getInstance();
+                if (pluginViewFactory != null) {
+                    pluginViewFactory.updateDeviceListComboBox();
+                }
             }
 
             @Override
             public void deviceDisconnected(IDevice iDevice) {
                 //  mCurrentDevice = null;
                 System.out.println("DeviceDisconnected");
-                PluginViewFactory.getInstance().updateDeviceListComboBox();
+                PluginViewFactory pluginViewFactory = PluginViewFactory.getInstance();
+                mDevices.remove(iDevice.getSerialNumber());
+                if (pluginViewFactory != null) {
+                    pluginViewFactory.updateDeviceListComboBox();
+                }
             }
 
             @Override
             public void deviceChanged(IDevice iDevice, int i) {
-
                 System.out.println("DeviceChanged : " + iDevice.getName());
-                //deviceConnected(iDevice);
+                PluginViewFactory pluginViewFactory = PluginViewFactory.getInstance();
+                if (pluginViewFactory != null && IDevice.CHANGE_STATE == i) {
+                    pluginViewFactory.SelectedDeviceChanged();
+                }
             }
         });
     }
@@ -107,9 +116,8 @@ public class DeviceManager {
     }
 
     public ArrayList<String> getConnectedDeviceNameList() {
-        ArrayList<String> deviceNameList = new ArrayList<String>();
-        IDevice[] devices = mADB.getDevices();
-        for (IDevice device : devices) {
+        ArrayList<String> deviceNameList = new ArrayList<>();
+        for (Device device : mDevices.values()) {
             deviceNameList.add(device.getSerialNumber());
         }
         return deviceNameList;
@@ -144,23 +152,21 @@ public class DeviceManager {
 
     public interface DeviceState {
         public final static int PROPERTY_EDITABLE = 0;
-        public final static int PROPERTY_SHOWABLE = 1;
-        public final static int UNAUTHORIZED = 2;
+        public final static int PROPERTY_VISIBLE = 1;
+        public final static int PROPERTY_INVISIBLE = 2;
     }
 
     public int getCurrentDeviceState() {
-        if (mDevice.isRootMode()) {
-            return DeviceState.PROPERTY_EDITABLE;
+        IDevice.DeviceState deviceState = mDevice.getState();
+        if (deviceState == IDevice.DeviceState.ONLINE) {
+            if (mDevice.isRootMode()) {
+                return DeviceState.PROPERTY_EDITABLE;
+            } else {
+                return DeviceState.PROPERTY_VISIBLE;
+            }
+        } else {
+            return DeviceState.PROPERTY_INVISIBLE;
         }
-        else {
-           if (mDevice.isUnauthorized()) {
-               return DeviceState.UNAUTHORIZED;
-           }
-            else {
-               return DeviceState.PROPERTY_SHOWABLE;
-           }
-        }
-
     }
 
     public ArrayList<String> getPropertyNames() {

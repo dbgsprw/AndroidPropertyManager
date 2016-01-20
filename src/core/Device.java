@@ -1,10 +1,7 @@
 package core;
 
 import com.android.ddmlib.*;
-import com.android.ddmlib.log.LogReceiver;
-import com.intellij.openapi.ui.Messages;
 import com.intellij.util.containers.HashMap;
-import exception.NullValueException;
 import view.PluginViewFactory;
 
 import java.io.BufferedReader;
@@ -12,10 +9,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Created by dbgsprw on 16. 1. 18.
@@ -29,10 +22,9 @@ public class Device {
     private boolean isRootMode;
 
 
-
     public Device(IDevice IDevice) {
         mIDevice = IDevice;
-        mProperties = new HashMap<String, Property>();
+        mProperties = new HashMap<>();
         mPropertyNames = new ArrayList<>();
         mProcessBuilder = new java.lang.ProcessBuilder();
         name = IDevice.getSerialNumber();
@@ -40,7 +32,7 @@ public class Device {
         executeShellCommand("id -u", new MultiLineReceiver() {
             @Override
             public void processNewLines(String[] lines) {
-                if("0".equals(lines[0])) {
+                if ("0".equals(lines[0])) {
                     isRootMode = true;
                 }
             }
@@ -53,19 +45,24 @@ public class Device {
     }
 
     public boolean isRootMode() {
+        executeShellCommand("id -u", new MultiLineReceiver() {
+            @Override
+            public void processNewLines(String[] lines) {
+                if ("0".equals(lines[0])) {
+                    isRootMode = true;
+                }
+            }
+
+            @Override
+            public boolean isCancelled() {
+                return false;
+            }
+        });
         return isRootMode;
     }
 
-    public boolean isUnauthorized() {
-        if (mIDevice.getState() == IDevice.DeviceState.UNAUTHORIZED) {
-            return true;
-        }
-        return false;
-    }
-
-
-    public HashMap<String, Property> getProperties() {
-        return mProperties;
+    public IDevice.DeviceState getState() {
+        return mIDevice.getState();
     }
 
     public void putProperty(String name, Property property) {
@@ -134,7 +131,7 @@ public class Device {
 
     private void executeAdbCommand(String... args) {
         try {
-            ArrayList<String> command = new ArrayList<String>();
+            ArrayList<String> command = new ArrayList<>();
             command.add("adb");
             command.add("-s");
             command.add(name);

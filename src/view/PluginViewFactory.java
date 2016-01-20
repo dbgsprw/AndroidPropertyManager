@@ -57,14 +57,13 @@ public class PluginViewFactory implements ToolWindowFactory {
     private ArrayList<String> mTableViewList;
 
     private boolean mIsUpdateDone;
-    private final Color DEFAULT_TABLE_BACKGROUND_COLOR ;
+    private final Color DEFAULT_TABLE_BACKGROUND_COLOR;
 
 
     public PluginViewFactory() {
         sPluginViewFactory = this;
         mDeviceManager = DeviceManager.getInstance();
         DEFAULT_TABLE_BACKGROUND_COLOR = mPropTable.getBackground();
-
     }
 
     public static PluginViewFactory getInstance() {
@@ -85,25 +84,24 @@ public class PluginViewFactory implements ToolWindowFactory {
         toolWindow.getContentManager().addContent(content);
     }
 
-    public void deviceStateChanged() {
+    public void SelectedDeviceChanged() {
         mDeviceManager.changeDevice(mDeviceListComboBox.getSelectedItem().toString());
 
         switch (mDeviceManager.getCurrentDeviceState()) {
             case DeviceManager.DeviceState.PROPERTY_EDITABLE:
                 mPropTable.setEnabled(true);
                 mPropTable.setBackground(DEFAULT_TABLE_BACKGROUND_COLOR);
-                setHint("Device is connected");
                 break;
-            case DeviceManager.DeviceState.PROPERTY_SHOWABLE:
+            case DeviceManager.DeviceState.PROPERTY_VISIBLE:
                 mPropTable.setEnabled(false);
                 mPropTable.setBackground(new Color(230, 230, 230));
                 setHint("Device is user-mode : You can't edit value");
                 break;
-            case DeviceManager.DeviceState.UNAUTHORIZED:
+            case DeviceManager.DeviceState.PROPERTY_INVISIBLE:
                 mPropTable.setEnabled(false);
                 mPropTable.setBackground(new Color(230, 230, 230));
                 clearTable();
-                setHint("Device is unauthorized");
+                setHint("Device is unauthorized or offline");
                 break;
         }
 
@@ -150,13 +148,13 @@ public class PluginViewFactory implements ToolWindowFactory {
         mDeviceListComboBox.addItemListener(new ItemListener() {
             @Override
             public void itemStateChanged(ItemEvent itemEvent) {
-                if(ItemEvent.SELECTED == itemEvent.getStateChange()) {
-                    deviceStateChanged();
+                if (ItemEvent.SELECTED == itemEvent.getStateChange()) {
+                    SelectedDeviceChanged();
                 }
 
             }
         });
-        deviceStateChanged();
+        SelectedDeviceChanged();
 
 
         mTableViewListComboBox.setPrototypeDisplayValue("XXXXXXXXXXXXX");
@@ -205,6 +203,7 @@ public class PluginViewFactory implements ToolWindowFactory {
         mSavePropFileButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
+                PluginViewFactory.getInstance().setHint("Property file is saved at system/build.prop of device file system");
                 mDeviceManager.savePropFile(mProject.getBasePath());
             }
         });
@@ -213,6 +212,7 @@ public class PluginViewFactory implements ToolWindowFactory {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
                 try {
+                    PluginViewFactory.getInstance().setHint("Device is restarting runtime...");
                     mDeviceManager.restartRuntime();
                 } catch (TimeoutException e) {
                     e.printStackTrace();
@@ -230,7 +230,7 @@ public class PluginViewFactory implements ToolWindowFactory {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
                 try {
-                    setHint("Please wait rebooting");
+                    PluginViewFactory.getInstance().setHint("Device is rebooting..., so now it is offline state");
                     mDeviceManager.rebootDevice();
                 } catch (TimeoutException e) {
                     e.printStackTrace();
@@ -256,14 +256,14 @@ public class PluginViewFactory implements ToolWindowFactory {
     }
 
     public void updateDeviceListComboBox() {
-        mDeviceListComboBox.removeAllItems();
         ArrayList<String> deviceNameList = mDeviceManager.getConnectedDeviceNameList();
-        if(deviceNameList.size() == 0) {
-            setHint("Can't find device");
+        if (deviceNameList.size() == 0) {
+            setHint("Can't find device. Maybe it is booting or not connected");
             mPropTable.setEnabled(false);
             mPropTable.setBackground(DEFAULT_TABLE_BACKGROUND_COLOR);
             clearTable();
         }
+        mDeviceListComboBox.removeAllItems();
         for (String deviceName : deviceNameList) {
             mDeviceListComboBox.addItem(deviceName);
         }
