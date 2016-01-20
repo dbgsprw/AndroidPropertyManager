@@ -1,9 +1,9 @@
 <idea-plugin version="2">
     <id>dbgsprw.apm</id>
-    <name>AndroidPropertyManager</name>
-    <description>AndroidPropertyManager Prototype</description>
+    <name>Android Property Manager</name>
+    <description>Add/modify android property of devices by tool window</description>
     <version>1.0</version>
-    <vendor email="dbgsprw@gmail.com" url=""></vendor>
+    <vendor email="dbgsprw@gmail.com" url="">dbgsprw</vendor>
 
     <change-notes>
     </change-notes>
