@@ -14,12 +14,17 @@
 
 package core;
 
+
 import com.android.ddmlib.*;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
+import com.intellij.openapi.projectRoots.ProjectJdkTable;
+import com.intellij.openapi.projectRoots.Sdk;
+import com.intellij.openapi.projectRoots.SdkTypeId;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.util.containers.HashMap;
 import com.intellij.util.text.StringTokenizer;
+import exception.NullAndroidHomeException;
 import exception.NullValueException;
 import view.PluginViewFactory;
 
@@ -43,12 +48,8 @@ public class DeviceManager {
 
     private DeviceManager() {
         mDevices = new HashMap<>();
-
         mProjectManager = ProjectManager.getInstance();
         mProject = mProjectManager.getDefaultProject();
-
-
-        adbInit();
     }
 
     synchronized public static DeviceManager getInstance() {
@@ -58,11 +59,15 @@ public class DeviceManager {
         return sDeviceManager;
     }
 
-    private void adbInit() {
-        String androidHome = System.getenv("ANDROID_HOME");
+    public void adbInit() throws NullAndroidHomeException {
+        String androidHome = null;
+
+        androidHome = findAndroidHome();
+
         if (androidHome == null) {
-            Messages.showMessageDialog(mProject, "Cannot Find $ANDROID_HOME\nPlease set $ANDROID_HOME and restart", "Error", Messages.getInformationIcon());
+            Messages.showMessageDialog(mProject, "Cannot Find $ANDROID_HOME or Android SDK\nPlease set $ANDROID_HOME and restart", "Android Property Manager", Messages.getInformationIcon());
             System.out.println("Cannot Find ANDROID_HOME");
+            throw new NullAndroidHomeException();
         }
 
         AndroidDebugBridge.init(true);
@@ -111,6 +116,16 @@ public class DeviceManager {
                 }
             }
         });
+    }
+
+    private String findAndroidHome() {
+        for (Sdk sdk : ProjectJdkTable.getInstance().getAllJdks()) {
+            SdkTypeId sdkTypeId = sdk.getSdkType();
+            if ("Android SDK".equals(sdkTypeId.getName())) {
+                return sdk.getHomePath();
+            }
+        }
+        return System.getenv("ANDROID_HOME");
     }
 
     public void putProperty(String name, Property property) {

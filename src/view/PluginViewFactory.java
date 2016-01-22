@@ -26,6 +26,7 @@ import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
 import core.DeviceManager;
 import core.Property;
+import exception.NullAndroidHomeException;
 import exception.NullValueException;
 
 import javax.swing.*;
@@ -84,7 +85,14 @@ public class PluginViewFactory implements ToolWindowFactory {
         return sPluginViewFactory;
     }
 
+
     public void createToolWindowContent(Project project, ToolWindow toolWindow) {
+        try {
+            mDeviceManager.adbInit();
+        } catch (NullAndroidHomeException e) {
+            e.printStackTrace();
+            return;
+        }
         mProject = project;
         mPropertiesComponent = PropertiesComponent.getInstance(mProject);
         mPropNameComboBox = new PropNameComboBox(mDeviceManager.getPropertyNames());
@@ -168,7 +176,6 @@ public class PluginViewFactory implements ToolWindowFactory {
 
             }
         });
-        SelectedDeviceChanged();
 
 
         mTableViewListComboBox.setPrototypeDisplayValue("XXXXXXXXXXXXX");
