@@ -70,7 +70,7 @@ public class DeviceManager {
             throw new NullAndroidHomeException();
         }
 
-        AndroidDebugBridge.init(true);
+        AndroidDebugBridge.initIfNeeded(false);
 
         File adbPath = new File(androidHome, "platform-tools" + File.separator + "adb");
         try {
