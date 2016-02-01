@@ -1,18 +1,27 @@
 <idea-plugin version="2">
     <id>dbgsprw.apm</id>
     <name>Android Property Manager</name>
-    <description>Add/modify android property of devices by tool window</description>
-    <version>1.1.1</version>
+    <version>1.1.2</version>
     <vendor email="dbgsprw@gmail.com" url="">dbgsprw</vendor>
 
-    <change-notes>
-    </change-notes>
-
     <idea-version since-build="141.0"/>
-    <change-notes>
-        1.1.1
-        bug fix : adb conflict
-    </change-notes>
+    <description><![CDATA[
+        Add/modify android property of devices by tool window<br>
+        Usage :<br>
+        1) ctrl+shift+A or [Help] > [Find Action]<br>
+        2) enter "tool windows"<br>
+        3) Click Android Property Manager<br>
+        4) choose connected device<br>
+        5) choose table or add table by edit combo box<br>
+        6) modify android property<br>
+        *** "Save Prop File" button will modify system/build.prop file (original system/build.prop will be saved at your project path)<br>
+     ]]></description>
+    <change-notes><![CDATA[
+        1.1.1<br>
+        bug fix : adb conflict<br>
+        1.1.2<br>
+        add usage<br>
+     ]]></change-notes>
 
 
     <extensions defaultExtensionNs="com.intellij">
