@@ -16,6 +16,7 @@ package core;
 
 
 import com.android.ddmlib.*;
+import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.projectRoots.ProjectJdkTable;
@@ -28,8 +29,7 @@ import exception.NullAndroidHomeException;
 import exception.NullValueException;
 import view.PluginViewFactory;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -45,11 +45,13 @@ public class DeviceManager {
     private Device mDevice;
     private ProjectManager mProjectManager;
     private Project mProject;
+    private PropFileMaker propFileMaker;
 
     private DeviceManager() {
         mDevices = new HashMap<>();
         mProjectManager = ProjectManager.getInstance();
         mProject = mProjectManager.getDefaultProject();
+        propFileMaker = new PropFileMaker(this);
     }
 
     synchronized public static DeviceManager getInstance() {
@@ -211,10 +213,14 @@ public class DeviceManager {
     }
 
     public void savePropFile(String path) {
+        propFileMaker.makePropFileToPath(path);
+    }
+
+    public void pushPropFile(String path, String oldPropDirPath) {
         SimpleDateFormat simpleDataFormat = new SimpleDateFormat("yy-MM-dd.HHmmss.SSS");
         String currentTime = simpleDataFormat.format(new Date());
         try {
-            mDevice.pullFile("system/build.prop", path + File.separator + "build.prop(" + currentTime + ")");
+            mDevice.pullFile("system/build.prop", oldPropDirPath + File.separator + "build.prop(" + currentTime + ")");
         } catch (AdbCommandRejectedException e) {
             e.printStackTrace();
         } catch (TimeoutException e) {
@@ -224,12 +230,9 @@ public class DeviceManager {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-        PropFileMaker propFileMaker = new PropFileMaker(this);
-        propFileMaker.makePropFileToPath(path + File.separator + "createdBuild.prop");
         mDevice.remount();
         try {
-            mDevice.pushFile(path + File.separator + "createdBuild.prop", "/system/build.prop");
+            mDevice.pushFile(path, "/system/build.prop");
         } catch (IOException e) {
             e.printStackTrace();
         } catch (AdbCommandRejectedException e) {
@@ -239,8 +242,30 @@ public class DeviceManager {
         } catch (SyncException e) {
             e.printStackTrace();
         }
-
     }
+
+    public void loadPropFile(String path) {
+        try {
+            BufferedReader bufferedReader = new BufferedReader(new FileReader(new File(path)));
+            String line;
+            while ((line = bufferedReader.readLine()) != null) {
+                String[] splitLine =line.split("=");
+                if(splitLine.length != 2) {
+                    continue;
+                }
+                Property property = new Property(splitLine[0], splitLine[1]);
+                putProperty(property.getName(), property);
+                setPropertyValue(property.getName(), property.getValue());
+            }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (NullValueException e) {
+            e.printStackTrace();
+        }
+    }
+
 
     public void rebootDevice() throws TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException, IOException {
         mDevice.reboot(null);

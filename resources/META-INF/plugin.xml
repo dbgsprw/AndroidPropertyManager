@@ -1,7 +1,7 @@
 <idea-plugin version="2">
     <id>dbgsprw.apm</id>
     <name>Android Property Manager</name>
-    <version>1.1.2</version>
+    <version>1.2.0</version>
     <vendor email="dbgsprw@gmail.com" url="">dbgsprw</vendor>
 
     <idea-version since-build="141.0"/>
@@ -14,13 +14,15 @@
         4) choose connected device<br>
         5) choose table or add table by edit combo box<br>
         6) modify android property<br>
-        *** "Save Prop File" button will modify system/build.prop file (original system/build.prop will be saved at your project path)<br>
+        *** "Push Prop File" button will modify system/build.prop file (original system/build.prop will be saved at your project path)<br>
      ]]></description>
     <change-notes><![CDATA[
-        1.1.1<br>
+        v1.1.1<br>
         bug fix : adb conflict<br>
-        1.1.2<br>
+        v1.1.2<br>
         add usage<br>
+        v1.2.0<br>
+        add push button<br>
      ]]></change-notes>
 
 
