@@ -42,6 +42,10 @@ public class Device {
         mPropertyNames = new ArrayList<>();
         mProcessBuilder = new java.lang.ProcessBuilder();
         name = IDevice.getSerialNumber();
+        setRootMode();
+    }
+
+    public void setRootMode() {
         executeAdbCommand("root");
         executeShellCommand("id -u", new MultiLineReceiver() {
             @Override

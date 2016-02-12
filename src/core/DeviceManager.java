@@ -30,6 +30,7 @@ import exception.NullValueException;
 import view.PluginViewFactory;
 
 import java.io.*;
+import java.lang.reflect.Array;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -86,7 +87,7 @@ public class DeviceManager {
             @Override
             public void deviceConnected(IDevice iDevice) {
                 Device device = new Device(iDevice);
-                PluginViewFactory.getInstance().setHint("Device Connected");
+                PluginViewFactory.getInstance().setHint("Device is Connected");
                 String deviceName = device.getSerialNumber();
                 if (!mDevices.containsKey(deviceName)) {
                     mDevices.put(deviceName, device);
@@ -181,6 +182,10 @@ public class DeviceManager {
         });
     }
 
+    public void setRootMode() {
+        mDevice.setRootMode();
+    }
+
     public interface DeviceState {
         public final static int PROPERTY_EDITABLE = 0;
         public final static int PROPERTY_VISIBLE = 1;
@@ -212,8 +217,15 @@ public class DeviceManager {
         mDevice.executeShellCommand("start");
     }
 
-    public void savePropFile(String path) {
-        propFileMaker.makePropFileToPath(path);
+    public void savePropFile(String path, ArrayList<String> propertyNames) {
+        ArrayList<Property> properties = new ArrayList<>();
+        for (String propertyName : propertyNames) {
+            Property property = getProperty(propertyName);
+            if(property != null) {
+                properties.add(property);
+            }
+        }
+        propFileMaker.makePropFileToPath(path, properties);
     }
 
     public void pushPropFile(String path, String oldPropDirPath) {
@@ -256,6 +268,7 @@ public class DeviceManager {
                 Property property = new Property(splitLine[0], splitLine[1]);
                 putProperty(property.getName(), property);
                 setPropertyValue(property.getName(), property.getValue());
+                System.out.println(property.getName());
             }
         } catch (FileNotFoundException e) {
             e.printStackTrace();

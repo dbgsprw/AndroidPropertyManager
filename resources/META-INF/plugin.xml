@@ -1,7 +1,7 @@
 <idea-plugin version="2">
     <id>dbgsprw.apm</id>
     <name>Android Property Manager</name>
-    <version>1.2.0</version>
+    <version>1.3.0</version>
     <vendor email="dbgsprw@gmail.com" url="">dbgsprw</vendor>
 
     <idea-version since-build="141.0"/>
@@ -14,7 +14,13 @@
         4) choose connected device<br>
         5) choose table or add table by edit combo box<br>
         6) modify android property<br>
-        *** "Push Prop File" button will modify system/build.prop file (original system/build.prop will be saved at your project path)<br>
+        <br>
+        ******* please read ********<br>
+        "Save Prop File" button save your current table to property file. this file is used to push or load.<br><br>
+        "Push Prop File" button modify system/build.prop file, so it can be dangerous. (original system/build.prop will be saved at your project path)
+        If possible, you must push prop file that save all properties. <br><br>
+        "Load Prop File" button load prop file and apply properties, so don't load property file that save all properties.
+        if you want to load properties, save prop file with custom table. loading all properties will malfunction.<br><br>
      ]]></description>
     <change-notes><![CDATA[
         v1.1.1<br>
@@ -23,6 +29,8 @@
         add usage<br>
         v1.2.0<br>
         add push button<br>
+        v1.3.0<br>
+        add load button & auto save table & change save prop function<br>
      ]]></change-notes>
 
 

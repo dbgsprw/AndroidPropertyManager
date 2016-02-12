@@ -30,17 +30,15 @@ public class PropFileMaker {
         this.mDeviceManager = deviceManager;
     }
 
-    public void makePropFileToPath(String path) {
+    public void makePropFileToPath(String path, ArrayList<Property> properties) {
         File file = new File(path);
         FileWriter fileWriter = null;
         try {
             fileWriter = new FileWriter(file);
         } catch (IOException e) {
             e.printStackTrace();
-        }
-        ArrayList<String> propertyNameList = mDeviceManager.getPropertyNames();
-        for (String propertyName : propertyNameList) {
-            Property property = mDeviceManager.getProperty(propertyName);
+        };
+        for (Property property : properties) {
             try {
                 fileWriter.append(property.toString() + "\n");
 

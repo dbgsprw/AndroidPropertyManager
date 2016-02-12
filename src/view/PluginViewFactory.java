@@ -116,11 +116,13 @@ public class PluginViewFactory implements ToolWindowFactory {
 
     public void SelectedDeviceChanged() {
         mDeviceManager.changeDevice(mDeviceListComboBox.getSelectedItem().toString());
+        mDeviceManager.setRootMode();
 
         switch (mDeviceManager.getCurrentDeviceState()) {
             case DeviceManager.DeviceState.PROPERTY_EDITABLE:
                 mPropTable.setEnabled(true);
                 mPropTable.setBackground(DEFAULT_TABLE_BACKGROUND_COLOR);
+                setHint("Device is root-mode");
                 break;
             case DeviceManager.DeviceState.PROPERTY_VISIBLE:
                 mPropTable.setEnabled(false);
@@ -155,11 +157,19 @@ public class PluginViewFactory implements ToolWindowFactory {
                     cellChangeToCurrentValueAtRow(row);
                 } else if (col == COLUMN_PROPERTY_VALUE) {
                     Property property = mDeviceManager.getProperty(name);
-                    String value = mPropTable.getValueAt(row, COLUMN_PROPERTY_VALUE).toString();
+                    Object valueObject = mPropTable.getValueAt(row, COLUMN_PROPERTY_VALUE);
+                    if (valueObject == null) {
+                        return;
+                    } else if("".equals(name)) {
+                        mPropTable.setValueAt(null, row, COLUMN_PROPERTY_VALUE);
+                        return;
+                    }
+                    String value = valueObject.toString();
                     if (property != null) {
                         if (!value.equals(mDeviceManager.getProperty(name))) {
                             try {
                                 mDeviceManager.setPropertyValue(name, value);
+                                saveTable();
                             } catch (NullValueException e) {
                                 cellChangeToCurrentValueAtRow(row);
                                 e.printStackTrace();
@@ -167,7 +177,7 @@ public class PluginViewFactory implements ToolWindowFactory {
                                 e.printStackTrace();
                             }
                         }
-                    } else if(value != null) {
+                    } else if (value != null) {
                         mDeviceManager.putProperty(name, new Property(name, value));
                     }
                 } else {
@@ -212,25 +222,6 @@ public class PluginViewFactory implements ToolWindowFactory {
             }
         });
 
-        mSaveCustomTableButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent actionEvent) {
-                String currentTableViewName = mTableViewListComboBox.getSelectedItem().toString();
-                if (ALL_TABLE_VIEW_PROPERTY_NAME.equals(mTableViewListComboBox.getSelectedItem())) {
-                    showMessage("Cannot save at ALL table, please use custom table view", "Error");
-                }
-                ArrayList<String> propertyNameList = new ArrayList<String>();
-                int tableRowLength = mPropTable.getRowCount();
-                for (int i = 0; i < tableRowLength; i++) {
-                    String propName = mPropTable.getValueAt(i, COLUMN_PROPERTY_NAME).toString();
-                    if (!"".equals(propName)) {
-                        propertyNameList.add(propName);
-                    }
-                }
-                mPropertiesComponent.setValues(currentTableViewName, propertyNameList.toArray(new String[propertyNameList.size()]));
-            }
-        });
-
 
         final JFileChooser jFileChooser = new JFileChooser();
         jFileChooser.setCurrentDirectory(new File(mProject.getBasePath()));
@@ -241,59 +232,60 @@ public class PluginViewFactory implements ToolWindowFactory {
             public void actionPerformed(ActionEvent actionEvent) {
                 File selectedFile = jFileChooser.getSelectedFile();
                 if (selectedFile == null) return;
-                if (selectedFile.exists()) {
-                    mIsChosenFileExist = true;
-                } else {
-                    mIsChosenFileExist = false;
-                }
-                if(selectedFile.getParentFile().canWrite()) {
-                    mIsChosenFileWritable = true;
-                } else {
-                    mIsChosenFileWritable = false;
-                }
+                mIsChosenFileExist = selectedFile.exists();
+                mIsChosenFileWritable = selectedFile.getParentFile().canWrite();
             }
         });
 
         mSavePropFileButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                jFileChooser.showSaveDialog(mPluginViewContent);
+                if (jFileChooser.showSaveDialog(mPluginViewContent) == JFileChooser.CANCEL_OPTION) return;
                 if (!mIsChosenFileWritable) {
-                    showMessage("Please choose writable path.","Android Property Manager");
-                } if (mIsChosenFileExist) {
-                    if (Messages.showOkCancelDialog("Override file?", "Android Property Manager",
-                            Messages.getInformationIcon()) == Messages.OK) {
-                        mDeviceManager.savePropFile(jFileChooser.getSelectedFile().getPath());
+                    showMessage("Please choose writable path.", "Android Property Manager");
+                    return;
+                } else if (mIsChosenFileExist) {
+                    if (Messages.showOkCancelDialog("Overwrite file?", "Android Property Manager",
+                            Messages.getInformationIcon()) != Messages.OK) {
+                        return;
                     }
                 }
-
+                String[] values = mPropertiesComponent.getValues(mTableViewListComboBox.getSelectedItem().toString());
+                ArrayList<String> propertyNames;
+                if (ALL_TABLE_VIEW_PROPERTY_NAME == mTableViewListComboBox.getSelectedItem().toString()) {
+                    propertyNames = mDeviceManager.getPropertyNames();
+                } else {
+                    propertyNames = new ArrayList<>(Arrays.asList(values));
+                }
+                mDeviceManager.savePropFile(jFileChooser.getSelectedFile().getPath(), propertyNames);
             }
         });
-/*
+
         mLoadPropFileButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                jFileChooser.showDialog(mPluginViewContent, "Choose");
-                if(mIsChosenFileExist) {
+                if (jFileChooser.showDialog(mPluginViewContent, "Choose") == JFileChooser.CANCEL_OPTION) return;
+
+                if (mIsChosenFileExist) {
                     mDeviceManager.loadPropFile(jFileChooser.getSelectedFile().getPath());
-                }
-                else {
-                    showMessage("Please select exist file.","Android Property Manager");
+                    mDeviceManager.updatePropFromDevice();
+                } else {
+                    showMessage("Please select exist file.", "Android Property Manager");
                 }
             }
-        });*/
+        });
 
         mPushPropFileButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                jFileChooser.showDialog(mPluginViewContent, "Choose");
-                if(mIsChosenFileExist) {
+                if (jFileChooser.showDialog(mPluginViewContent, "Choose") == JFileChooser.CANCEL_OPTION) return;
+                if (mIsChosenFileExist) {
                     String oldPropDirPath = mProject.getBasePath();
                     mDeviceManager.pushPropFile(jFileChooser.getSelectedFile().getPath(), oldPropDirPath);
-                    PluginViewFactory.getInstance().setHint("Property file is saved at system/build.prop of device file system");
-                }
-                else {
-                    showMessage("Please select exist file.","Android Property Manager");
+                    PluginViewFactory.getInstance().
+                            setHint("Property file is saved at system/build.prop of device file system");
+                } else {
+                    showMessage("Please select exist file.", "Android Property Manager");
                 }
             }
         });
@@ -333,6 +325,22 @@ public class PluginViewFactory implements ToolWindowFactory {
                 }
             }
         });
+    }
+
+    public void saveTable() {
+        String currentTableViewName = mTableViewListComboBox.getSelectedItem().toString();
+        if (ALL_TABLE_VIEW_PROPERTY_NAME.equals(mTableViewListComboBox.getSelectedItem())) {
+            return;
+        }
+        ArrayList<String> propertyNameList = new ArrayList<String>();
+        int tableRowLength = mPropTable.getRowCount();
+        for (int i = 0; i < tableRowLength; i++) {
+            String propName = mPropTable.getValueAt(i, COLUMN_PROPERTY_NAME).toString();
+            if (!"".equals(propName)) {
+                propertyNameList.add(propName);
+            }
+        }
+        mPropertiesComponent.setValues(currentTableViewName, propertyNameList.toArray(new String[propertyNameList.size()]));
     }
 
     public void clearTable() {
@@ -404,7 +412,6 @@ public class PluginViewFactory implements ToolWindowFactory {
             }
             values = new String[0];
         }
-
         ArrayList<String> propertyNames = new ArrayList<>(Arrays.asList(values));
         showProperty(propertyNames);
     }
@@ -416,8 +423,8 @@ public class PluginViewFactory implements ToolWindowFactory {
             String propertyName = propertyNames.get(i);
 
             mPropTable.setValueAt(propertyName, i, COLUMN_PROPERTY_NAME);
-            Property property =  mDeviceManager.getProperty(propertyName);
-            if(property != null) {
+            Property property = mDeviceManager.getProperty(propertyName);
+            if (property != null) {
                 mPropTable.setValueAt(mDeviceManager.getProperty(propertyName).getValue(), i, COLUMN_PROPERTY_VALUE);
             } else {
                 mPropTable.setValueAt("", i, COLUMN_PROPERTY_VALUE);
@@ -441,9 +448,7 @@ public class PluginViewFactory implements ToolWindowFactory {
         }
         String value;
         value = mDeviceManager.getProperty(name).getValue();
-        if (value != null) {
-            mPropTable.setValueAt(mDeviceManager.getProperty(name).getValue(), row, COLUMN_PROPERTY_VALUE);
-        }
+        mPropTable.setValueAt(value, row, COLUMN_PROPERTY_VALUE);
     }
 
     public void setHint(String text) {

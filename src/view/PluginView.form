@@ -23,23 +23,6 @@
           </component>
         </children>
       </scrollpane>
-      <component id="1219" class="javax.swing.JButton" binding="mSavePropFileButton">
-        <constraints>
-          <grid row="3" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="7" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-        </constraints>
-        <properties>
-          <enabled value="true"/>
-          <text value="Save Prop File"/>
-        </properties>
-      </component>
-      <component id="59e43" class="javax.swing.JButton" binding="mRestartRuntimeButton" default-binding="true">
-        <constraints>
-          <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="7" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-        </constraints>
-        <properties>
-          <text value="Restart Runtime"/>
-        </properties>
-      </component>
       <component id="c6d8d" class="javax.swing.JComboBox" binding="mDeviceListComboBox">
         <constraints>
           <grid row="0" column="2" row-span="1" col-span="2" vsize-policy="0" hsize-policy="1" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
@@ -70,7 +53,7 @@
       </component>
       <component id="46354" class="javax.swing.JComboBox" binding="mTableViewListComboBox">
         <constraints>
-          <grid row="1" column="2" row-span="1" col-span="2" vsize-policy="0" hsize-policy="1" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
+          <grid row="1" column="2" row-span="1" col-span="3" vsize-policy="0" hsize-policy="1" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
           <enabled value="true"/>
@@ -82,15 +65,6 @@
         </constraints>
         <properties>
           <text value="Refresh"/>
-        </properties>
-      </component>
-      <component id="d2407" class="javax.swing.JButton" binding="mSaveCustomTableButton" default-binding="true">
-        <constraints>
-          <grid row="1" column="4" row-span="1" col-span="1" vsize-policy="0" hsize-policy="7" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-        </constraints>
-        <properties>
-          <enabled value="true"/>
-          <text value="Save Table"/>
         </properties>
       </component>
       <component id="7e00c" class="javax.swing.JButton" binding="mRebootDeviceButton" default-binding="true">
@@ -108,7 +82,16 @@
           </grid>
         </constraints>
         <properties>
-          <text value="dsadsadsa"/>
+          <text value=""/>
+        </properties>
+      </component>
+      <component id="1219" class="javax.swing.JButton" binding="mSavePropFileButton">
+        <constraints>
+          <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="7" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties>
+          <enabled value="true"/>
+          <text value="Save Prop File"/>
         </properties>
       </component>
       <component id="ad933" class="javax.swing.JButton" binding="mPushPropFileButton" default-binding="true">
@@ -118,6 +101,22 @@
         <properties>
           <enabled value="true"/>
           <text value="Push Prop File"/>
+        </properties>
+      </component>
+      <component id="cc039" class="javax.swing.JButton" binding="mLoadPropFileButton">
+        <constraints>
+          <grid row="3" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties>
+          <text value="Load Prop File"/>
+        </properties>
+      </component>
+      <component id="59e43" class="javax.swing.JButton" binding="mRestartRuntimeButton" default-binding="true">
+        <constraints>
+          <grid row="4" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="7" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties>
+          <text value="Restart Runtime"/>
         </properties>
       </component>
     </children>
