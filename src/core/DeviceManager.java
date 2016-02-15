@@ -47,6 +47,7 @@ public class DeviceManager {
     private ProjectManager mProjectManager;
     private Project mProject;
     private PropFileMaker propFileMaker;
+    private String mAdbPath;
 
     private DeviceManager() {
         mDevices = new HashMap<>();
@@ -68,25 +69,26 @@ public class DeviceManager {
         androidHome = findAndroidHome();
 
         if (androidHome == null) {
-            Messages.showMessageDialog(mProject, "Cannot Find $ANDROID_HOME or Android SDK\nPlease set $ANDROID_HOME and restart", "Android Property Manager", Messages.getInformationIcon());
+            Messages.showMessageDialog(mProject, "Cannot Find $ANDROID_HOME and Android SDK\nPlease set Android Sdk " +
+                    "or $ANDROID_HOME and restart", "Android Property Manager", Messages.getInformationIcon());
             System.out.println("Cannot Find ANDROID_HOME");
             throw new NullAndroidHomeException();
         }
 
         AndroidDebugBridge.initIfNeeded(false);
 
-        File adbPath = new File(androidHome, "platform-tools" + File.separator + "adb");
-        try {
-            mADB = AndroidDebugBridge.createBridge(adbPath.getCanonicalPath(), true);
 
+        try {
+            mAdbPath = new File(androidHome, "platform-tools" + File.separator + "adb").getCanonicalPath();
         } catch (IOException e) {
             e.printStackTrace();
         }
+        mADB = AndroidDebugBridge.createBridge(mAdbPath, true);
 
         AndroidDebugBridge.addDeviceChangeListener(new AndroidDebugBridge.IDeviceChangeListener() {
             @Override
             public void deviceConnected(IDevice iDevice) {
-                Device device = new Device(iDevice);
+                Device device = new Device(iDevice, mAdbPath);
                 PluginViewFactory.getInstance().setHint("Device is Connected");
                 String deviceName = device.getSerialNumber();
                 if (!mDevices.containsKey(deviceName)) {

@@ -18,10 +18,7 @@ import com.android.ddmlib.*;
 import com.intellij.util.containers.HashMap;
 import view.PluginViewFactory;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.util.ArrayList;
 
 /**
@@ -34,14 +31,16 @@ public class Device {
     private java.lang.ProcessBuilder mProcessBuilder;
     private String name;
     private boolean isRootMode;
+    private String mAdbPath;
 
 
-    public Device(IDevice IDevice) {
+    public Device(IDevice IDevice, String adbPath) {
         mIDevice = IDevice;
         mProperties = new HashMap<>();
         mPropertyNames = new ArrayList<>();
         mProcessBuilder = new java.lang.ProcessBuilder();
         name = IDevice.getSerialNumber();
+        mAdbPath = adbPath;
         setRootMode();
     }
 
@@ -150,7 +149,7 @@ public class Device {
     private void executeAdbCommand(String... args) {
         try {
             ArrayList<String> command = new ArrayList<>();
-            command.add("adb");
+            command.add(mAdbPath);
             command.add("-s");
             command.add(name);
             for (String arg : args) {
